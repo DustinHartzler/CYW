@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Contact Us - Vintage Immersed - Multipurpose HTML Template</title>
+
+<!--********Style Sheet********-->
+<link href="style.css" rel="stylesheet" type="text/css" />
+<link href="css/menu.css" rel="stylesheet" type="text/css" />
+
+<script src="js/jquery.min.js" type="text/javascript"></script>
+<script src="js/jquery.validate.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="js/jqueryslidemenu.js"></script>
+<script src="js/contact.js" type="text/javascript"></script>
+<script src="js/contact%20_validation.js" type="text/javascript"></script>
+
+<!--********Cufon Replacement********-->
+<script src="js/cufon-yui.js" type="text/javascript"></script>
+<script type="text/javascript" src="js/Helvetica_LT_Compressed_400.font.js"> </script>
+<script type="text/javascript" src="js/Helvetica_LT_CondensedLight_300.font.js"> </script>
+<script type="text/javascript" src="js/Helvetica_Inserat_LT_Std_800.font.js"> </script>
+<script type="text/javascript" src="js/allcufon.js"> </script>
+</head>
+<body>
+	<!-- social-media div start here -->
+    <div class="social-media">
+        <!-- wrapper div start here -->
+      <div class="wrapper">
+            <ul>
+                <li><a href="#" ><img src="images/fb_icon.png" alt="" title="" class="fb" /></a></li>
+                <li><a href="#" ><img src="images/tw_icon.png" alt="" title="" class="tw-icon"/></a></li>
+                <li><a href="#" ><img src="images/linked_icon.png" alt="" title="" class="linked-icon" /></a></li>
+                <li><a href="#" ><img src="images/you_tube_icon.png" alt="" title="" class="you-tube-icon"/></a></li>
+            </ul>
+        </div>
+    </div>
+    <!-- social-media div End here -->
+        
+    <div class="top-line"></div>
+    
+    <!-- header div start here -->
+    <div id="header">
+        <!-- wrapper div start here -->
+        <div class="wrapper">
+            <a href="index-2.html" id="logo"><img src="images/logo.png" alt="" title="" /></a>  
+            <div class="main-menu-container" id="myslidemenu">
+                <ul id="main-menu">
+                    <li class="menu-item"><a href="index-2.html">HOME</a></li>
+                    <li class="menu-item"><a href="blog-detail.html">PAGES</a>
+						<ul class="sub-menu">
+                            <li class="menu-item"> <a href="style-elements.html" title=""> Typography</a> </li>
+                            <li class="menu-item"> <a href="fullwidth-page.html" title=""> Full Width </a></li>
+                        	<li class="menu-item"> <a href="#" title=""> Portfolio </a> 
+                            	<ul class="sub-menu">
+                                    <li class="menu-item"><a href="portfolio-2col.html" title="">2 - Column</a></li>
+                                    <li class="menu-item"><a href="portfolio-3col.html" title="">3 - Column</a></li>
+		                        	<li class="menu-item"><a href="portfolio-4col.html" title="">4 - Column</a></li>
+		                        	<li class="menu-item"><a href="portfolio-detail.html" title="">Portfolio Detail</a></li>
+                                </ul>
+                            </li>
+                            <li class="menu-item"> <a href="404.html" title=""> 404 - Error Page </a></li>                                                        
+                        </ul>
+                    </li>
+                    <li class="menu-item pages"><a href="about.html">ABOUT US</a></li>
+                    <li class="menu-item"><a href="portfolio-2col.html">PORTFOLIO</a>
+                    	<ul class="sub-menu">
+                        	<li class="menu-item"><a href="portfolio-2col.html" title="">2 - Column</a></li>
+                        	<li class="menu-item"><a href="portfolio-3col.html" title="">3 - Column</a>
+								<ul class="sub-menu">
+		                            <li> <a href="#" title=""> some link </a> </li>
+        		                    <li> <a href="#" title=""> some link 2 </a></li>
+								</ul>
+                            </li>                            
+                        	<li class="menu-item"><a href="portfolio-4col.html" title="">4 - Column</a></li>                                                        
+                        	<li class="menu-item"><a href="portfolio-detail.html" title="">Portfolio Detail</a></li>
+                        	<li class="menu-item"><a href="#" title="">Sample Link</a></li>                            
+                        </ul>
+                    </li>
+                    <li class="menu-item"><a href="blog-list.html">BLOG</a></li>
+                    <li class="menu-item current-page-item"><a href="contact-us.html">CONTACT US</a></li>
+                </ul>
+            </div>
+            <div class="storytitle">
+                <h3>A vintage styled unique website design</h3>
+                <h5>That Best suits your need</h5>
+            </div>
+        </div>
+        <!-- wrapper div End here -->
+    </div>
+    <!-- header div End here -->
+    
+	<!-- wrapper div start here -->
+	<div class="wrapper">
+		<div id="page-content">
+			<div class="hr-line no-more">
+				<h1>
+					<span>CONTACT US</span>
+				</h1>
+			</div>
+			<div id="ajax_message"> </div>                        
+            <form class="contact-frm" name="frmcontact" id="frmcontact" action="http://iamdesigning.com/client_files/wp-themes/vintage-immersed/demo/js/contact.php" method="post">
+	            <textarea name="comment" id="comment" onfocus="if (this.value == 'Comment') {this.value = '';}" onblur="if (this.value == '') {this.value = 'Comment';}" rows="1" cols="20" >Comment</textarea>
+				<input type="text" name="name" id="name" value="Name" onfocus="if (this.value == 'Name') {this.value = '';}" onblur="if (this.value == '') {this.value = 'Name';}" />
+                <input type="text" name="email" id="email" value="Email" onfocus="if (this.value == 'Email') {this.value = '';}" onblur="if (this.value == '') {this.value = 'Email';}" />
+                <input type="submit" name="submit" id="send" value="SUBMIT"  />
+            </form>
+			<div class="location">
+				<h2 class="hr-line1"><span>Location</span></h2>
+                <iframe width="630" height="270" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="http://maps.google.co.in/maps?f=q&amp;source=s_q&amp;hl=en&amp;geocode=&amp;q=iamdesigning,+Coimbatore,+Tamil+Nadu&amp;aq=0&amp;oq=iamdes&amp;sll=21.125498,81.914063&amp;sspn=53.555487,107.138672&amp;ie=UTF8&amp;hq=iamdesigning,&amp;hnear=Coimbatore,+Tamil+Nadu&amp;t=m&amp;ll=10.982826,76.99997&amp;spn=0.116536,0.105931&amp;output=embed"></iframe>
+			</div>
+        </div>
+        
+        <div class="sidebar" id="contact-widget-container">
+        	<div class="widget widget-address">
+            	<h3>ADDRESS</h3>
+                <p>+1.234.567.8910<br />
+                    1234 South Something Street<br />
+                    Madison, WI 555555
+				</p>
+            </div>
+			<div class="widget widget-email">
+            	<h3>EMAIL ADDRESS</h3>
+                <p>
+                	<a href="#">john@an.com</a><br />
+                    <a href="#">support@an.com</a>
+				</p>
+            </div>
+			<div class="widget widget-call">
+            	<h3>GIVE US A CALL</h3>
+                <p> +91 - 11 - 23321234<br />
+					+91 - 11 - 23321235
+				</p>
+            </div>
+			<div class="widget widget-skype">
+            	<h3>SKYPE</h3>
+                <p><a href="#">yourskypename</a></p>
+            </div>
+        </div>
+    </div>
+    <!-- wrapper div End here -->
+    
+    <div class="bottom-line"></div>
+    
+    <!-- footer div start here -->
+    <div id="footer">
+    	<!-- footer-widgets div start here -->
+    	<div class="footer-widgets">
+            <!-- wrapper div start here -->
+            <div class="wrapper">
+            	<!-- footer-column1 Div start here -->
+                <div class="footer-column1">
+                    <div class="widget widget-recent-tweets">
+                        <h3>LATEST TWEETS</h3>
+                        <ul>
+                            <li>@ twittername <a href="#"> this is a sample text and link.</a> Mar28, 2012</li>
+                            <li>@ twittername <a href="#">this is a sample text and link with a long line to go.</a> Mar28, 2012</li>
+                            <li>@ twittername <a href="#">this is a sample text and link with a long line to go.</a> Mar28, 2012</li>
+                            <li>@ twittername  <a href="#">this is a sample text and link. </a> Mar28, 2012 Mar28, 2012</li>
+                        </ul>
+					</div>
+                </div>
+                <!-- footer-column1 Div End here -->
+                
+                <!-- footer-column2 Div start here -->
+                <div class="footer-column2">
+                    <div class="widget widget-search">
+                        <h3>SEARCH</h3>
+                        <form id="searchform" action="#">
+                            <input type="text" onblur="if (this.value == '') {this.value = 'Type to Search';}" onfocus="if (this.value == 'Type to Search') {this.value = '';}" value="Type to Search" />
+                            <input type="submit" name="submit" class="button" />
+                        </form>
+                        <p>Contrary to popular belief, Lorem Ipsum is not simply random text.</p>
+					</div>
+                    <div class="widget social-widget">
+                        <h3>WE ARE EASY TO FIND</h3>
+                        <ul>
+                            <li><a href="#" ><img src="images/fb_icon.png" alt="" title="" class="fb" /></a></li>
+                            <li><a href="#" ><img src="images/tw_icon.png" alt="" title="" class="tw-icon"/></a></li>
+                            <li><a href="#" ><img src="images/linked_icon.png" alt="" title="" class="linked-icon" /></a></li>
+                            <li><a href="#" ><img src="images/you_tube_icon.png" alt="" title="" class="you-tube-icon"/></a></li>
+                        </ul>
+                    </div>
+				</div>
+                <!-- footer-column2 Div End here -->
+                
+                <!-- footer-column3 Div start here -->
+                <div class="footer-column3">
+                    <div class="widget">
+                        <h3>CONTACT US</h3>
+                        <div id="contact_message"> </div>                        
+                        <form class="contact" action="http://iamdesigning.com/client_files/wp-themes/vintage-immersed/demo/js/send.php" id="footer_contact" name="footer_contact" method="post">
+							<input name="cname" id="cname" type="text" onblur="if (this.value == '') {this.value = 'Name';}" onfocus="if (this.value == 'Name') {this.value = '';}" value="Name" />
+                            <input name="cemail" id="cemail" type="text" onblur="if (this.value == '') {this.value = 'Email';}" onfocus="if (this.value == 'Email') {this.value = '';}" value="Email" />
+                            <textarea name="cmessage" id="cmessage" onblur="if (this.value == '') {this.value = 'Message';}" onfocus="if (this.value == 'Message') {this.value = '';}" rows="1" cols="20">Message</textarea>                        
+                            <input type="submit" id="submit" name="submit" class="button" value="SUBMIT" />
+                        </form>
+                    </div>
+                </div>
+                <!-- footer-column3 Div start here -->
+			</div>
+		 	<!-- wrapper div End here -->
+        </div>
+        <!-- footer-widgets div End here --> 
+    
+        <!-- footer-info div start here --> 
+        <div class="footer-info">
+            <div class="wrapper">
+                <p>&copy; 2012 Vintage Immersed. All Rights Reserved</p>
+            </div>
+        </div>
+        <!-- footer-info Div End Here -->
+        
+    </div>
+	<!-- footer div End here -->
+</body>
+
+</html>

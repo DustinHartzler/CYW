@@ -1,0 +1,85 @@
+.capslide_img_cont{
+    vertical-align:baseline;
+    position:relative;
+    /*-moz-border-radius:10px;
+    -webkit-border-radius:10px;
+    -khtml-border-radius:10px;
+    -moz-box-shadow: 0 1px 3px #888;
+    -webkit-box-shadow: 0 1px 3px #888;*/
+}
+.portfolio-column3 .overlay{
+	background:url(../images/hover-effect-3col.png) no-repeat !important;	
+    opacity:0.3;
+    position:absolute;
+    top:0px;
+    bottom:0px;
+    left:0px;
+    right:0px;
+    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=50);
+	height:245px;
+	width:300px;
+}
+.portfolio-column3 .ic_caption{
+	background:url(../images/hover-effect-3col.png) no-repeat !important;		
+    position:absolute;    
+    overflow:hidden;
+    margin:0px;
+    padding:0px;
+    left:0px;
+    right:0px;
+    cursor:default;
+    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=60);
+	height:245px;
+	width:300px;
+}
+
+.portfolio-column4 .overlay{
+	background:url(../images/hover-effect-4col.png) no-repeat !important;	
+    opacity:0.3;
+    position:absolute;
+    top:0px;
+    bottom:0px;
+    left:0px;
+    right:0px;
+    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=50);
+	height:220px;
+	width:220px;
+}
+.portfolio-column4 .ic_caption{
+	background:url(../images/hover-effect-4col.png) no-repeat !important;		
+    position:absolute;    
+    overflow:hidden;
+    margin:0px;
+    padding:0px;
+    left:0px;
+    right:0px;
+    cursor:default;
+    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=60);
+	height:220px;
+	width:220px;
+}
+.portfolio-related-work .overlay{
+	background:url(../images/hover-effect-4col.png) no-repeat !important;	
+    opacity:0.3;
+    position:absolute;
+    top:0px;
+    bottom:0px;
+    left:0px;
+    right:0px;
+    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=50);
+	height:220px;
+	width:220px;
+}
+.portfolio-related-work .ic_caption{
+	background:url(../images/hover-effect-4col.png) no-repeat !important;		
+    position:absolute;    
+    overflow:hidden;
+    margin:0px;
+    padding:0px;
+    left:0px;
+    right:0px;
+    cursor:default;
+    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=60);
+	height:220px;
+	width:220px;
+}
