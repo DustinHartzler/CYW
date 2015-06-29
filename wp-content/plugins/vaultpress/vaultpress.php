@@ -3,7 +3,7 @@
  * Plugin Name: VaultPress
  * Plugin URI: http://vaultpress.com/?utm_source=plugin-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * Description: Protect your content, themes, plugins, and settings with <strong>realtime backup</strong> and <strong>automated security scanning</strong> from <a href="http://vaultpress.com/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">VaultPress</a>. Activate, enter your registration key, and never worry again. <a href="http://vaultpress.com/help/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">Need some help?</a>
- * Version: 1.7.0
+ * Version: 1.7.5
  * Author: Automattic
  * Author URI: http://vaultpress.com/?utm_source=author-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * License: GPL2+
@@ -12,13 +12,12 @@
  */
 
 // don't call the file directly
-if ( !defined( 'ABSPATH' ) )
-	return;
+defined( 'ABSPATH' ) or die();
 
 class VaultPress {
 	var $option_name    = 'vaultpress';
 	var $db_version     = 4;
-	var $plugin_version = '1.7.0';
+	var $plugin_version = '1.7.5';
 
 	function __construct() {
 		register_activation_hook( __FILE__, array( $this, 'activate' ) );
@@ -934,12 +933,19 @@ class VaultPress {
 			return '*';
 	}
 
+	/**
+	 * Use an option ID to ensure a unique ping ID for the site.
+	 *
+	 * @return  int|false  The new ping number. False, if there was an error.
+	 */
 	function ai_ping_next() {
 		global $wpdb;
 		$name = "_vp_ai_ping";
-		$rval = $wpdb->query( $wpdb->prepare( "REPLACE INTO `$wpdb->options` (`option_name`, `option_value`, `autoload`) VALUES (%s, '', 'no')", $name ) );
-		if ( !$rval )
+		$wpdb->query( $wpdb->prepare( "DELETE FROM `$wpdb->options` WHERE `option_name` = %s;", $name ) );
+		$success = $wpdb->query( $wpdb->prepare( "INSERT INTO `$wpdb->options` (`option_name`, `option_value`, `autoload`) VALUES (%s, '', 'no')", $name ) );
+		if ( ! $success ) {
 			return false;
+		}
 		return $wpdb->insert_id;
 	}
 
@@ -1021,7 +1027,9 @@ class VaultPress {
 		$external_data = $this->request_firewall_update( true );
 		if ( $external_data ) {
 			$external_newval = array( 'updated' => time(), 'data' => $external_data );
-			update_option( 'vaultpress_service_ips_external_cidr', $external_newval );
+
+			delete_option( 'vaultpress_service_ips_external_cidr' );
+			add_option( 'vaultpress_service_ips_external_cidr', $external_newval, '', 'no' );
 		}
 
 		if ( !empty( $data ) && !empty( $external_data ) )
@@ -1814,6 +1822,21 @@ JS;
 			unset( $post['_REPEATED'] );
 		ksort( $post );
 		$to_sign = serialize( array( 'uri' => $uri, 'post' => $post ) );
+
+		if ( $this->can_use_openssl() ) {
+			$sslsig = '';
+			if ( isset( $post['sslsig'] ) ) {
+				$sslsig = $post['sslsig'];
+				unset( $post['sslsig'] );
+			}
+			if ( openssl_verify( serialize( array( 'uri' => $uri, 'post' => $post ) ), base64_decode( $sslsig ), $this->get_option( 'public_key' ) ) ) {
+				return true;
+			} else {
+				$__vp_validate_error = array( 'error' => 'invalid_signed_data' );
+				return false;
+			}
+		}
+
 		$signature = $this->sign_string( $to_sign, $secret, $sig[1] );
 		if ( $sig[0] === $signature )
 			return true;
@@ -1948,6 +1971,17 @@ JS;
 
 	function sign_string( $string, $secret, $salt ) {
 		return hash_hmac( 'sha1', "$string:$salt", $secret );
+	}
+
+	function can_use_openssl() {
+		if ( !function_exists( 'openssl_verify' ) )
+			return false;
+		$pk = $this->get_option( 'public_key' );
+		if ( empty( $pk ) )
+			return false;
+		if ( 1 !== (int) $this->get_option( 'use_openssl_signing' ) )
+			return false;
+		return true;
 	}
 
 	function response( $response, $raw = false ) {
