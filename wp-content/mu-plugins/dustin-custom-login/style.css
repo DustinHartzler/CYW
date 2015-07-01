@@ -55,8 +55,9 @@ input#rememberme{
   	background-image:-webkit-linear-gradient(top, #555555, #555555);
 }
 
-.login #nav a, .login #backtoblog a {
+.login #nav a {
 	color:#ababab!important;
+	padding-left: 68px;
 }
 
 .login form input {
@@ -76,6 +77,11 @@ input#rememberme{
 	color:#ffffff;
 }
 
-p#nav, p#backtoblog {
+p#backtoblog {
 	display: none;
+}
+
+.login #nav {
+  margin: 24px 0 0 ;
+  width: 270px;
 }
