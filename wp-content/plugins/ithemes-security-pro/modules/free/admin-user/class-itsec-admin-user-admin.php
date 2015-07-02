@@ -303,7 +303,7 @@ class ITSEC_Admin_User_Admin {
 		} else {
 
 			echo '<p>' . __( 'This feature will improve the security of your WordPress installation by removing common user attributes that can be used to target your site.', 'it-l10n-ithemes-security-pro' ) . '</p>';
-			echo sprintf( '<div class="itsec-warning-message"><span>%s: </span><a href="?page=toplevel_page_itsec-backup">%s</a> %s</div>', __( 'WARNING', 'it-l10n-ithemes-security-pro' ), __( 'Backup your database', 'it-l10n-ithemes-security-pro' ), __( 'before changing the admin user.', 'it-l10n-ithemes-security-pro' ) );
+			echo sprintf( '<div class="itsec-warning-message"><span>%s: </span><a href="?page=toplevel_page_itsec_backups">%s</a> %s</div>', __( 'WARNING', 'it-l10n-ithemes-security-pro' ), __( 'Backup your database', 'it-l10n-ithemes-security-pro' ), __( 'before changing the admin user.', 'it-l10n-ithemes-security-pro' ) );
 			echo sprintf( '<div class="itsec-notice-message"><span>%s: </span> %s </div>', __( 'Notice', 'it-l10n-ithemes-security-pro' ), __( 'Changing the admin username or id of user 1 will log you out of your site requiring you to log back in again.', 'it-l10n-ithemes-security-pro' ) );
 
 			?>

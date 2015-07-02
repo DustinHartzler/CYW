@@ -108,9 +108,6 @@ if ( ! class_exists( 'ITSEC_Tweaks_Setup' ) ) {
 
 			delete_site_transient( 'itsec_random_version' );
 
-			$config_rules[] = itsec_tweaks_Admin::build_wpconfig_rules( null, true );
-			$itsec_files->set_wpconfig( $config_rules );
-
 			//Reset recommended file permissions
 			@chmod( ITSEC_Lib::get_htaccess(), 0644 );
 			@chmod( ITSEC_Lib::get_config(), 0644 );

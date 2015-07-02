@@ -245,3 +245,27 @@
 	Enhancement: Add dashboard reminder to salts to prompt for periodic salt changes.
 1.6.2 - 2015-02-26 - Chris Jean
 	Bug Fix: When a file scan is run from iThemes Sync, a warning will no longer be added to the site's error log.
+1.6.3 - 2015-03-20 - Chris Jean
+	Bug Fix: Fixed incorrect text describing the "Backups to Retain" database backup setting.
+1.6.4 - 2015-04-13 - Chris Jean
+	Bug Fix: Security fix for XSS vulnerability. Thanks to Ole Aass (@oleaass) for finding and disclosing this vulnerability to the iThemes Security team.
+1.6.5 - 2015-06-04 - Chris Jean
+	Bug Fix: Added support for Apache 2.4 without the access_compat module.
+	Bug Fix: Fixed condition where forcing SSL on front-end pages could cause infinite redirection loops with specific setups of nginx to Apache reverse proxy servers.
+	Bug Fix: Fixed scenarios where the site would be forced to load via https but scripts, stylesheets, and images would load via http.
+	Bug Fix: Fixed invalid nginx.conf rule generation for the Reduce Comment Spam feature.
+	Bug Fix: Corrected invalid parsing of some IP formats in Ban Hosts list.
+	Bug Fix: Improved error handling when reading or updating config files.
+	Bug Fix: Fixed various warnings that would display when changing settings.
+	Enhancement: Updated to use new file modification API.
+	Enhancement: Added HackRepair.com blacklist for Nginx.
+	Enhancement: Improved Nginx support for System Tweak features.
+	Enhancement: Updates to wp-config.php, .htaccess, and nginx.conf files now support more systems.
+	Enhancement: Combined the "Force SSL for Dashboard" and "Force SSL for Login" settings to a unified "Force SSL for Dashboard" setting. This is due to how the FORCE_SSL_LOGIN define was deprecated in WP 4.0.0.
+	Enhancement: Added comments to wp-config.php, .htaccess, and nginx.conf updates that indicate which settings affect the specific entries.
+	Enhancement: Added translation support for previously static strings, including strings used for comments in wp-config.php, .htaccess, and nginx.conf files.
+	Enhancement: Improved generation of valid referers for use by the Reduce Comment Spam feature.
+1.6.6 - 2015-06-09 - Chris Jean
+	Enhancement: Fixed tabbing for "Ban User Agents" section in .htaccess files to match tabbing used by other sections.
+1.6.7 - 2015-06-16 - Chris Jean
+	Bug Fix: Fixed support for wp-config.php files placed one directory above the ABSPATH.

@@ -25,6 +25,10 @@ class ITSEC_Tweaks_Admin {
 			add_action( 'itsec_admin_init', array( $this, 'save_network_options' ) ); //save multisite options
 		}
 
+
+		add_filter( 'itsec_filter_apache_server_config_modification', array( $this, 'filter_apache_server_config_modification' ) );
+		add_filter( 'itsec_filter_nginx_server_config_modification', array( $this, 'filter_nginx_server_config_modification' ) );
+		add_filter( 'itsec_filter_wp_config_modification', array( $this, 'filter_wp_config_modification' ) );
 	}
 
 	/**
@@ -402,14 +406,14 @@ class ITSEC_Tweaks_Admin {
 
 		echo '<option value="0" ' . selected( $log_type, '0' ) . '>' . __( 'Off', 'it-l10n-ithemes-security-pro' ) . '</option>';
 		echo '<option value="1" ' . selected( $log_type, '1' ) . '>' . __( 'Only Disable Trackbacks/Pingbacks', 'it-l10n-ithemes-security-pro' ) . '</option>';
-		echo '<option value="2" ' . selected( $log_type, '2' ) . '>' . __( 'Completely Disable XMLRPC', 'it-l10n-ithemes-security-pro' ) . '</option>';
+		echo '<option value="2" ' . selected( $log_type, '2' ) . '>' . __( 'Completely Disable XML-RPC', 'it-l10n-ithemes-security-pro' ) . '</option>';
 		echo '</select>';
-		echo '<label for="itsec_tweaks_server_disable_xmlrpc"> ' . __( 'Disable XMLRPC', 'it-l10n-ithemes-security-pro' ) . '</label>';
+		echo '<label for="itsec_tweaks_server_disable_xmlrpc"> ' . __( 'Disable XML-RPC', 'it-l10n-ithemes-security-pro' ) . '</label>';
 		printf(
 			'<p class="description"><ul><li>%s</li><li>%s</li><li>%s</li></ul></p>',
-			__( 'Off = XMLRPC is fully enabled and will function as normal.', 'it-l10n-ithemes-security-pro' ),
-			__( 'Only Disable Trackbacks/Pingbacks = Your site will not be susceptible to denial of service attacks via the trackback/pingback feature. Other XMLRPC features will work as normal. You need this if you require features such as Jetpack or the WordPress Mobile app.', 'it-l10n-ithemes-security-pro' ),
-			__( 'Completely Disable XMLRPC is the safest, XMLRPC will be completely disabled by your webserver. This will prevent features such as Jetpack that require XMLRPC from working.', 'it-l10n-ithemes-security-pro' )
+			__( 'Off = XML-RPC is fully enabled and will function as normal.', 'it-l10n-ithemes-security-pro' ),
+			__( 'Only Disable Trackbacks/Pingbacks = Your site will not be susceptible to denial of service attacks via the trackback/pingback feature. Other XML-RPC features will work as normal. You need this if you require features such as Jetpack or the WordPress Mobile app.', 'it-l10n-ithemes-security-pro' ),
+			__( 'Completely Disable XML-RPC is the safest, XML-RPC will be completely disabled by your webserver. This will prevent features such as Jetpack that require XML-RPC from working.', 'it-l10n-ithemes-security-pro' )
 		);
 
 	}
@@ -652,375 +656,310 @@ print site_url();
 
 	}
 
-	/**
-	 * Build rewrite rules.
-	 *
-	 * @since 4.0
-	 *
-	 * @param mixed $input options to build rules from
-	 *
-	 * @return array         rules to write
-	 */
-	public static function build_rewrite_rules( $input = null ) {
-
-		$server_type = ITSEC_Lib::get_server(); //Get the server type to build the right rules
-
-		//Get the rules from the database if input wasn't sent
-		if ( $input === null ) {
-			$input = get_site_option( 'itsec_tweaks' );
+	public function filter_apache_server_config_modification( $modification ) {
+		$input = get_site_option( 'itsec_tweaks' );
+		
+		if ( true === $input['protect_files'] ) {
+			$files = array(
+				'.htaccess',
+				'readme.html',
+				'readme.txt',
+				'install.php',
+				'wp-config.php',
+			);
+			
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Protect System Files - Security > Settings > System Tweaks > System Files', 'it-l10n-ithemes-security-pro' ) . "\n";
+			
+			foreach ( $files as $file ) {
+				$modification .= "\t<files $file>\n";
+				$modification .= "\t\t<IfModule mod_authz_core.c>\n";
+				$modification .= "\t\t\tRequire all denied\n";
+				$modification .= "\t\t</IfModule>\n";
+				$modification .= "\t\t<IfModule !mod_authz_core.c>\n";
+				$modification .= "\t\t\tOrder allow,deny\n";
+				$modification .= "\t\t\tDeny from all\n";
+				$modification .= "\t\t</IfModule>\n";
+				$modification .= "\t</files>\n";
+			}
 		}
-
-		$rules = ''; //initialize all rules to blank string
-
-		//Process Protect Files Rules
-		if ( $input['protect_files'] === true ) {
-
-			if ( $server_type === 'nginx' ) { //NGINX rules
-
-				$rules .= "\t# " . __( 'Rules to block access to WordPress specific files and wp-includes', 'it-l10n-ithemes-security-pro' ) . PHP_EOL .
-				          "\tlocation ~ /\.ht { deny all; }" . PHP_EOL .
-				          "\tlocation ~ wp-config.php { deny all; }" . PHP_EOL .
-				          "\tlocation ~ readme.html { deny all; }" . PHP_EOL .
-				          "\tlocation ~ readme.txt { deny all; }" . PHP_EOL .
-				          "\tlocation ~ /install.php { deny all; }" . PHP_EOL .
-				          "\tlocation ^wp-includes/(.*).php { deny all; }" . PHP_EOL .
-				          "\tlocation ^/wp-admin/includes(.*)$ { deny all; }" . PHP_EOL;
-
-			} else { //rules for all other servers
-
-				$rules .= "# " . __( 'Rules to block access to WordPress specific files', 'it-l10n-ithemes-security-pro' ) . PHP_EOL .
-				          "<files .htaccess>" . PHP_EOL .
-				          "\tOrder allow,deny" . PHP_EOL .
-				          "\tDeny from all" . PHP_EOL .
-				          "</files>" . PHP_EOL .
-				          "<files readme.html>" . PHP_EOL .
-				          "\tOrder allow,deny" . PHP_EOL .
-				          "\tDeny from all" . PHP_EOL .
-				          "</files>" . PHP_EOL .
-				          "<files readme.txt>" . PHP_EOL .
-				          "\tOrder allow,deny" . PHP_EOL .
-				          "\tDeny from all" . PHP_EOL .
-				          "</files>" . PHP_EOL .
-				          "<files install.php>" . PHP_EOL .
-				          "\tOrder allow,deny" . PHP_EOL .
-				          "\tDeny from all" . PHP_EOL .
-				          "</files>" . PHP_EOL .
-				          "<files wp-config.php>" . PHP_EOL .
-				          "\tOrder allow,deny" . PHP_EOL .
-				          "\tDeny from all" . PHP_EOL .
-				          "</files>" . PHP_EOL;
-
-			}
-
+		
+		if ( 2 == $input['disable_xmlrpc'] ) {
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Disable XML-RPC - Security > Settings > WordPress Tweaks > XML-RPC', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\t<files xmlrpc.php>\n";
+			$modification .= "\t\t<IfModule mod_authz_core.c>\n";
+			$modification .= "\t\t\tRequire all denied\n";
+			$modification .= "\t\t</IfModule>\n";
+			$modification .= "\t\t<IfModule !mod_authz_core.c>\n";
+			$modification .= "\t\t\tOrder allow,deny\n";
+			$modification .= "\t\t\tDeny from all\n";
+			$modification .= "\t\t</IfModule>\n";
+			$modification .= "\t</files>\n";
 		}
-
-		//Rules to disanle XMLRPC
-		if ( $input['disable_xmlrpc'] == 2 ) {
-
-			if ( strlen( $rules ) > 1 ) {
-				$rules .= PHP_EOL;
-			}
-
-			$rules .= "# " . __( 'Rules to disable XML-RPC', 'it-l10n-ithemes-security-pro' ) . PHP_EOL;
-
-			if ( $server_type === 'nginx' ) { //NGINX rules
-
-				$rules .= "\tlocation ~ xmlrpc.php { deny all; }" . PHP_EOL;
-
-			} else { //rules for all other servers
-
-				$rules .= "<files xmlrpc.php>" . PHP_EOL .
-				          "\tOrder allow,deny" . PHP_EOL .
-				          "\tDeny from all" . PHP_EOL .
-				          "</files>" . PHP_EOL;
-
-			}
-
+		
+		if ( true == $input['directory_browsing'] ) {
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Disable Directory Browsing - Security > Settings > System Tweaks > Directory Browsing', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\tOptions -Indexes\n";
 		}
-
-		//Primary Rules for Directory Browsing
-		if ( $input['directory_browsing'] == true ) {
-
-			if ( strlen( $rules ) > 1 ) {
-				$rules .= PHP_EOL;
-			}
-
-			$rules .= "# " . __( 'Rules to disable directory browsing', 'it-l10n-ithemes-security-pro' ) . PHP_EOL;
-
-			if ( $server_type !== 'nginx' ) { //Don't use this on NGINX
-
-				$rules .= "Options -Indexes" . PHP_EOL;
-
-			}
-
+		
+		
+		$rewrites = '';
+		
+		if ( true == $input['protect_files'] ) {
+			$rewrites .= "\n";
+			$rewrites .= "\t\t# " . __( 'Protect System Files - Security > Settings > System Tweaks > System Files', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$rewrites .= "\t\tRewriteRule ^wp-admin/includes/ - [F]\n";
+			$rewrites .= "\t\tRewriteRule !^wp-includes/ - [S=3]\n";
+			$rewrites .= "\t\tRewriteCond %{SCRIPT_FILENAME} !^(.*)wp-includes/ms-files.php\n";
+			$rewrites .= "\t\tRewriteRule ^wp-includes/[^/]+\.php$ - [F]\n";
+			$rewrites .= "\t\tRewriteRule ^wp-includes/js/tinymce/langs/.+\.php - [F]\n";
+			$rewrites .= "\t\tRewriteRule ^wp-includes/theme-compat/ - [F]\n";
 		}
-
-		//Apache rewrite rules (and related NGINX rules)
-		if ( $input['protect_files'] == true || $input['uploads_php'] == true || $input['request_methods'] == true || $input['suspicious_query_strings'] == true || $input['non_english_characters'] == true || $input['comment_spam'] == true ) {
-
-			if ( strlen( $rules ) > 1 ) {
-				$rules .= PHP_EOL;
-			}
-
-			//Open Apache rewrite rules
-			if ( $server_type !== 'nginx' ) {
-
-				$rules .= "<IfModule mod_rewrite.c>" . PHP_EOL .
-				          "\tRewriteEngine On" . PHP_EOL;
-
-			}
-
-			//Rewrite Rules for Protect Files
-			if ( $input['protect_files'] == true && $server_type !== 'nginx' ) {
-
-				$rules .= PHP_EOL . "\t# " . __( 'Rules to protect wp-includes', 'it-l10n-ithemes-security-pro' ) . PHP_EOL;
-
-				$rules .= "\tRewriteRule ^wp-admin/includes/ - [F]" . PHP_EOL .
-				          "\tRewriteRule !^wp-includes/ - [S=3]" . PHP_EOL .
-				          "\tRewriteCond %{SCRIPT_FILENAME} !^(.*)wp-includes/ms-files.php" . PHP_EOL .
-				          "\tRewriteRule ^wp-includes/[^/]+\.php$ - [F]" . PHP_EOL .
-				          "\tRewriteRule ^wp-includes/js/tinymce/langs/.+\.php - [F]" . PHP_EOL .
-				          "\tRewriteRule ^wp-includes/theme-compat/ - [F]" . PHP_EOL;
-
-			}
-
-			//Rewrite Rules for Disable PHP in Uploads
-			if ( $input['uploads_php'] === true ) {
-
-				$rules .= PHP_EOL . "\t# " . __( 'Rules to prevent php execution in uploads', 'it-l10n-ithemes-security-pro' ) . PHP_EOL;
-
-				if ( $server_type !== 'nginx' ) {
-
-					$rules .= "\tRewriteRule ^(.*)/uploads/(.*).php(.?) - [F]" . PHP_EOL;
-
-				} else { //rules for all other servers
-
-					$rules .= "\tlocation ^(.*)/uploads/(.*).php(.?){ deny all; }" . PHP_EOL;
-
+		
+		if ( true === $input['uploads_php'] ) {
+			$upload_path = get_option( 'upload_path' );
+			
+			if ( is_string( $upload_path ) && ! empty( $upload_path ) && ( 'wp-content/uploads' !== $upload_path ) ) {
+				$upload_path = str_replace( '\\', '/', $upload_path );
+				$abspath = str_replace( '\\', '/', ABSPATH );
+				
+				if ( 0 === strpos( $upload_path, $abspath ) ) {
+					$dir = preg_replace( '|^' . preg_quote( $abspath, '|' ) . '/?|', '', $upload_path );
 				}
-
 			}
-
-			//Apache rewrite rules for disable http methods
-			if ( $input['request_methods'] == true ) {
-
-				$rules .= PHP_EOL . "\t# " . __( 'Rules to block unneeded HTTP methods', 'it-l10n-ithemes-security-pro' ) . PHP_EOL;
-
-				if ( $server_type === 'nginx' ) { //NGINX rules
-
-					$rules .= "\tif (\$request_method ~* \"^(TRACE|DELETE|TRACK)\"){ return 403; }" . PHP_EOL;
-
-				} else { //rules for all other servers
-
-					$rules .= "\tRewriteCond %{REQUEST_METHOD} ^(TRACE|DELETE|TRACK) [NC]" . PHP_EOL . "\tRewriteRule ^(.*)$ - [F]" . PHP_EOL;
-
-				}
-
+			
+			if ( empty( $dir ) ) {
+				$dir = 'wp-content/uploads';
 			}
-
-			//Process suspicious query rules
-			if ( $input['suspicious_query_strings'] == true ) {
-
-				$rules .= PHP_EOL . "\t# " . __( 'Rules to block suspicious URIs', 'it-l10n-ithemes-security-pro' ) . PHP_EOL;
-
-				if ( $server_type === 'nginx' ) { //NGINX rules
-
-					$rules .= "\tset \$susquery 0;" . PHP_EOL .
-					          "\tif (\$args ~* \"\\.\\./\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"\.(bash|git|hg|log|svn|swp|cvs)\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"etc/passwd\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"boot.ini\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"ftp:\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"http:\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"https:\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"(<|%3C).*script.*(>|%3E)\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"mosConfig_[a-zA-Z_]{1,21}(=|%3D)\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"base64_encode\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"(%24&x)\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"(127.0)\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"(globals|encode|localhost|loopback)\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args ~* \"(request|insert|concat|union|declare)\") { set \$susquery 1; }" . PHP_EOL .
-					          "\tif (\$args !~ \"^loggedout=true\"){ set \$susquery 0; }" . PHP_EOL .
-					          "\tif (\$args !~ \"^action=jetpack-sso\"){ set \$susquery 0; }" . PHP_EOL .
-					          "\tif (\$args !~ \"^action=rp\"){ set \$susquery 0; }" . PHP_EOL .
-					          "\tif (\$http_cookie !~ \"^.*wordpress_logged_in_.*\$\"){ set \$susquery 0; }" . PHP_EOL .
-					          "\tif (\$http_referer !~ \"^http://maps.googleapis.com(.*)\$\"){ set \$susquery 0; }" . PHP_EOL .
-					          "\tif (\$susquery = 1) { return 403; } " . PHP_EOL;
-
-				} else { //rules for all other servers
-
-					$rules .= "\tRewriteCond %{QUERY_STRING} \.\.\/ [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} ^.*\.(bash|git|hg|log|svn|swp|cvs) [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} etc/passwd [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} boot\.ini [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} ftp\:  [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} http\:  [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} https\:  [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} mosConfig_[a-zA-Z_]{1,21}(=|%3D) [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} base64_encode.*\(.*\) [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} ^.*(%24&x).* [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} ^.*(127\.0).* [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} ^.*(globals|encode|localhost|loopback).* [NC,OR]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} ^.*(request|concat|insert|union|declare).* [NC]" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} !^loggedout=true" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} !^action=jetpack-sso" . PHP_EOL .
-					          "\tRewriteCond %{QUERY_STRING} !^action=rp" . PHP_EOL .
-					          "\tRewriteCond %{HTTP_COOKIE} !^.*wordpress_logged_in_.*$" . PHP_EOL .
-					          "\tRewriteCond %{HTTP_REFERER} !^http://maps\.googleapis\.com(.*)$" . PHP_EOL .
-					          "\tRewriteRule ^(.*)$ - [F]" . PHP_EOL;
-
-				}
-
-			}
-
-			//Process filtering of foreign characters
-			if ( $input['non_english_characters'] == true ) {
-
-				$rules .= PHP_EOL . "\t# " . __( 'Rules to block foreign characters in URLs', 'it-l10n-ithemes-security-pro' ) . PHP_EOL;
-
-				if ( $server_type === 'nginx' ) { //NGINX rules
-
-					$rules .= "\tif (\$args ~* \"(%0|%A|%B|%C|%D|%E|%F)\") { return 403; }" . PHP_EOL;
-
-				} else { //rules for all other servers
-
-					$rules .= "\tRewriteCond %{QUERY_STRING} ^.*(%0|%A|%B|%C|%D|%E|%F).* [NC]" . PHP_EOL . "\tRewriteRule ^(.*)$ - [F]" . PHP_EOL;
-
-				}
-
-			}
-
-			//Process Comment spam rules
-			if ( $input['comment_spam'] == true ) {
-
-				$rules .= PHP_EOL . "\t# " . __( 'Rules to help reduce spam', 'it-l10n-ithemes-security-pro' ) . PHP_EOL;
-
-				if ( $server_type === 'nginx' ) { //NGINX rules
-
-					$rules .= "\tlocation /wp-comments-post.php {" . PHP_EOL .
-					          "\t\tvalid_referers jetpack.wordpress.com/jetpack-comment/ " . ITSEC_Lib::get_domain( get_site_url(), false ) . ";" . PHP_EOL .
-					          "\t\tset \$rule_0 0;" . PHP_EOL .
-					          "\t\tif (\$request_method ~ \"POST\"){ set \$rule_0 1\$rule_0; }" . PHP_EOL .
-					          "\t\tif (\$invalid_referer) { set \$rule_0 2\$rule_0; }" . PHP_EOL .
-					          "\t\tif (\$http_user_agent ~ \"^$\"){ set \$rule_0 3\$rule_0; }" . PHP_EOL .
-					          "\t\tif (\$rule_0 = \"3210\") { return 403; }" . PHP_EOL .
-					          "\t}";
-
-				} else { //rules for all other servers
-
-					$rules .= "\tRewriteCond %{REQUEST_METHOD} POST" . PHP_EOL . "\tRewriteCond %{REQUEST_URI} ^(.*)wp-comments-post\.php*" . PHP_EOL . "\tRewriteCond %{HTTP_REFERER} !^" . ITSEC_Lib::get_domain( get_site_url() ) . ".* " . PHP_EOL . "\tRewriteCond %{HTTP_REFERER} !^http://jetpack\.wordpress\.com/jetpack-comment/ [OR]" . PHP_EOL . "\tRewriteCond %{HTTP_USER_AGENT} ^$" . PHP_EOL . "\tRewriteRule ^(.*)$ - [F]" . PHP_EOL;
-
-				}
-
-			}
-
-			//Close Apache Rewrite rules
-			if ( $server_type !== 'nginx' ) { //non NGINX rules
-
-				$rules .= "</IfModule>";
-
-			}
-
+			
+			$dir = trim( $dir, '/' );
+			$dir = preg_quote( $dir );
+			
+			$rewrites .= "\n";
+			$rewrites .= "\t\t# " . __( 'Disable PHP in Uploads - Security > Settings > System Tweaks > Uploads', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$rewrites .= "\t\tRewriteRule ^$dir/.*\.(?:php[1-6]?|pht|phtml?)$ - [NC,F]\n";
 		}
-
-		if ( strlen( $rules ) > 0 ) {
-			$rules = explode( PHP_EOL, $rules );
-		} else {
-			$rules = false;
+		
+		if ( true == $input['request_methods'] ) {
+			$rewrites .= "\n";
+			$rewrites .= "\t\t# " . __( 'Filter Request Methods - Security > Settings > System Tweaks > Request Methods', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$rewrites .= "\t\tRewriteCond %{REQUEST_METHOD} ^(TRACE|DELETE|TRACK) [NC]\n";
+			$rewrites .= "\t\tRewriteRule . - [F]\n";
 		}
-
-		//create a proper array for writing
-		return array( 'type' => 'htaccess', 'priority' => 10, 'name' => 'Tweaks', 'rules' => $rules, );
-
-	}
-
-	/**
-	 * Build wp-config.php rules
-	 *
-	 * @since 4.0
-	 *
-	 * @param  array $input        options to build rules from
-	 * @param bool   $deactivation whether or not we're deactivating
-	 *
-	 * @return array         rules to write
-	 */
-	public static function build_wpconfig_rules( $input = null, $deactivation = false ) {
-
-		//Return options to default on deactivation
-		if ( $deactivation === true || ( isset( $_GET['action'] ) && $_GET['action'] == 'deactivate' ) ) {
-
-			$input        = array();
-			$deactivating = true;
-			$initials     = get_site_option( 'itsec_initials' );
-
-			if ( isset( $initials['file_editor'] ) && $initials['file_editor'] === false && defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT === true ) { //initially off, now on
-
-				$input['file_editor'] = false;
-
-			} elseif ( isset( $initials['file_editor'] ) && $initials['file_editor'] === true && ( ! defined( 'DISALLOW_FILE_EDIT' ) || DISALLOW_FILE_EDIT === false ) ) { //initially on, now off
-
-				$input['file_editor'] = true;
-
-			} elseif ( defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT === true ) { //no initial state, now on
-
-				$input['file_editor'] = true;
-
-			} else { //no initial state or other info. Set off
-
-				$input['file_editor'] = false;
-
-			}
-
-		} else {
-
-			$deactivating = false;
-
-			//Get the rules from the database if input wasn't sent
-			if ( $input === null ) {
-				$input = get_site_option( 'itsec_tweaks' );
-			}
-
+		
+		if ( true == $input['suspicious_query_strings'] ) {
+			$rewrites .= "\n";
+			$rewrites .= "\t\t# " . __( 'Filter Suspicious Query Strings in the URL - Security > Settings > System Tweaks > Suspicious Query Strings', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} \.\.\/ [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} ^.*\.(bash|git|hg|log|svn|swp|cvs) [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} etc/passwd [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} boot\.ini [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} ftp\:  [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} http\:  [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} https\:  [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} mosConfig_[a-zA-Z_]{1,21}(=|%3D) [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} base64_encode.*\(.*\) [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} ^.*(%24&x).* [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} ^.*(127\.0).* [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} ^.*(globals|encode|localhost|loopback).* [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} ^.*(request|concat|insert|union|declare).* [NC]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} !^loggedout=true\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} !^action=jetpack-sso\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} !^action=rp\n";
+			$rewrites .= "\t\tRewriteCond %{HTTP_COOKIE} !^.*wordpress_logged_in_.*$\n";
+			$rewrites .= "\t\tRewriteCond %{HTTP_REFERER} !^http://maps\.googleapis\.com(.*)$\n";
+			$rewrites .= "\t\tRewriteRule . - [F]\n";
 		}
-
-		$comment_add = array(
-			'type'        => 'add',
-			'search_text' => '//The entry below were created by iThemes Security to disable the file editor',
-			'rule'        => '//The entry below were created by iThemes Security to disable the file editor',
-		);
-
-		$comment_remove = array(
-			'type'        => 'delete',
-			'search_text' => '//The entry below were created by iThemes Security to disable the file editor',
-			'rule'        => false,
-		);
-
-		$rule_add = array(
-			'type' => 'add', 'search_text' => 'DISALLOW_FILE_EDIT', 'rule' => "define( 'DISALLOW_FILE_EDIT', true );",
-		);
-
-		$rule_remove = array( 'type' => 'delete', 'search_text' => 'DISALLOW_FILE_EDIT', 'rule' => false, );
-
-		if ( $input['file_editor'] == true ) {
-
-			if ( $deactivating === true ) {
-				$rule[] = $comment_remove;
+		
+		if ( true == $input['non_english_characters'] ) {
+			$rewrites .= "\n";
+			$rewrites .= "\t\t# " . __( 'Filter Non-English Characters - Security > Settings > System Tweaks > Non-English Characters', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} ^.*(%0|%A|%B|%C|%D|%E|%F).* [NC]\n";
+			$rewrites .= "\t\tRewriteRule . - [F]\n";
+		}
+		
+		if ( true == $input['comment_spam'] ) {
+			$valid_referers = $this->get_valid_referers( 'apache' );
+			
+			$rewrites .= "\n";
+			$rewrites .= "\t\t# " . __( 'Reduce Comment Spam - Security > Settings > System Tweaks > Comment Spam', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$rewrites .= "\t\tRewriteCond %{REQUEST_METHOD} POST\n";
+			$rewrites .= "\t\tRewriteCond %{REQUEST_URI} /wp-comments-post\.php\$\n";
+			
+			if ( empty( $valid_referers ) || in_array( '*', $valid_referers ) ) {
+				$rewrites .= "\t\tRewriteCond %{HTTP_USER_AGENT} ^$\n";
 			} else {
-				$rule[] = $comment_add;
+				foreach ( $valid_referers as $index => $referer ) {
+					if ( '*.' == substr( $referer, 0, 2 ) ) {
+						$referer = '([^/]+.)?' . substr( $referer, 2 );
+					}
+					
+					$referer = str_replace( '.', '\.', $referer );
+					$referer = rtrim( $referer, '/' );
+					
+					$valid_referers[$index] = $referer;
+				}
+				$valid_referers = implode( '|', $valid_referers );
+				
+				$rewrites .= "\t\tRewriteCond %{HTTP_USER_AGENT} ^$ [OR]\n";
+				$rewrites .= "\t\tRewriteCond %{HTTP_REFERER} !^https?://($valid_referers)(/|$) [NC]\n";
 			}
-
-			$rule[] = $rule_add;
-
-		} else {
-
-			$rule[] = $comment_remove;
-
-			$rule[] = $rule_remove;
-
+			
+			$rewrites .= "\t\tRewriteRule . - [F]\n";
 		}
-
-		return array( 'type' => 'wpconfig', 'name' => 'Tweaks', 'rules' => $rule, );
-
+		
+		if ( ! empty( $rewrites ) ) {
+			$modification .= "\n";
+			$modification .= "\t<IfModule mod_rewrite.c>\n";
+			$modification .= "\t\tRewriteEngine On\n";
+			$modification .= $rewrites;
+			$modification .= "\t</IfModule>\n";
+		}
+		
+		
+		return $modification;
+	}
+	
+	public function filter_nginx_server_config_modification( $modification ) {
+		$input = get_site_option( 'itsec_tweaks' );
+		
+		if ( true === $input['protect_files'] ) {
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Protect System Files - Security > Settings > System Tweaks > System Files', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\tlocation ~ /\.ht { deny all; }\n";
+			$modification .= "\tlocation ~ wp-config.php { deny all; }\n";
+			$modification .= "\tlocation ~ readme.html { deny all; }\n";
+			$modification .= "\tlocation ~ readme.txt { deny all; }\n";
+			$modification .= "\tlocation ~ /install.php { deny all; }\n";
+			$modification .= "\tlocation ^wp-includes/(.*).php { deny all; }\n";
+			$modification .= "\tlocation ^/wp-admin/includes(.*)$ { deny all; }\n";
+		}
+		
+		if ( 2 == $input['disable_xmlrpc'] ) {
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Disable XML-RPC - Security > Settings > WordPress Tweaks > XML-RPC', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\tlocation ~ xmlrpc.php { deny all; }\n";
+		}
+		
+		// Rewrite Rules for Disable PHP in Uploads
+		if ( true === $input['uploads_php'] ) {
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Disable PHP in Uploads - Security > Settings > System Tweaks > Uploads', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\tlocation ^(.*)/uploads/(.*).php(.?) { deny all; }\n";
+		}
+		
+		// Apache rewrite rules for disable http methods
+		if ( true == $input['request_methods'] ) {
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Filter Request Methods - Security > Settings > System Tweaks > Request Methods', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\tif (\$request_method ~* \"^(TRACE|DELETE|TRACK)\") { return 403; }\n";
+		}
+		
+		// Process suspicious query rules
+		if ( true == $input['suspicious_query_strings'] ) {
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Filter Suspicious Query Strings in the URL - Security > Settings > System Tweaks > Suspicious Query Strings', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\tset \$susquery 0;\n";
+			$modification .= "\tif (\$args ~* \"\\.\\./\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"\.(bash|git|hg|log|svn|swp|cvs)\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"etc/passwd\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"boot.ini\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"ftp:\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"http:\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"https:\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"(<|%3C).*script.*(>|%3E)\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"mosConfig_[a-zA-Z_]{1,21}(=|%3D)\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"base64_encode\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"(%24&x)\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"(127.0)\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"(globals|encode|localhost|loopback)\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args ~* \"(request|insert|concat|union|declare)\") { set \$susquery 1; }\n";
+			$modification .= "\tif (\$args !~ \"^loggedout=true\") { set \$susquery 0; }\n";
+			$modification .= "\tif (\$args !~ \"^action=jetpack-sso\") { set \$susquery 0; }\n";
+			$modification .= "\tif (\$args !~ \"^action=rp\") { set \$susquery 0; }\n";
+			$modification .= "\tif (\$http_cookie !~ \"^.*wordpress_logged_in_.*\$\") { set \$susquery 0; }\n";
+			$modification .= "\tif (\$http_referer !~ \"^http://maps.googleapis.com(.*)\$\") { set \$susquery 0; }\n";
+			$modification .= "\tif (\$susquery = 1) { return 403; } \n";
+		}
+		
+		// Process filtering of foreign characters
+		if ( true == $input['non_english_characters'] ) {
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Filter Non-English Characters - Security > Settings > System Tweaks > Non-English Characters', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\tif (\$args ~* \"(%0|%A|%B|%C|%D|%E|%F)\") { return 403; }\n";
+		}
+		
+		// Process Comment spam rules
+		if ( true == $input['comment_spam'] ) {
+			$valid_referers = $this->get_valid_referers( 'nginx' );
+			
+			$modification .= "\n";
+			$modification .= "\t# " . __( 'Reduce Comment Spam - Security > Settings > System Tweaks > Comment Spam', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\t# " . __( 'Help reduce spam', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "\tlocation /wp-comments-post.php {\n";
+			$modification .= "\t\tlimit_except POST { deny all; }\n";
+			$modification .= "\t\tif (\$http_user_agent ~ \"^$\") { return 403; }\n";
+			
+			if ( ! empty( $valid_referers ) && ! in_array( '*', $valid_referers ) ) {
+				$modification .= "\t\tvalid_referers " . implode( ' ', $valid_referers ) . ";\n";
+				$modification .= "\t\tif (\$invalid_referer) { return 403; }\n";
+			}
+			
+			$modification .= "\t}\n";
+		}
+		
+		return $modification;
+	}
+	
+	protected function get_valid_referers( $server_type ) {
+		$valid_referers = array();
+		
+		if ( 'apache' === $server_type ) {
+			$domain = ITSEC_Lib::get_domain( get_site_url() );
+			
+			if ( '*' == $domain ) {
+				$valid_referers[] = $domain;
+			} else {
+				$valid_referers[] = "*.$domain";
+			}
+		} else if ( 'nginx' === $server_type ) {
+			$valid_referers[] = 'server_names';
+		} else {
+			return array();
+		}
+		
+		$valid_referers[] = 'jetpack.wordpress.com/jetpack-comment/';
+		$valid_referers = apply_filters( 'itsec_filter_valid_comment_referers', $valid_referers, $server_type );
+		
+		if ( is_string( $valid_referers ) ) {
+			$valid_referers = array( $valid_referers );
+		} else if ( ! is_array( $valid_referers ) ) {
+			$valid_referers = array();
+		}
+		
+		foreach ( $valid_referers as $index => $referer ) {
+			$valid_referers[$index] = preg_replace( '|^https?://|', '', $referer );
+		}
+		
+		return $valid_referers;
+	}
+	
+	public function filter_wp_config_modification( $modification ) {
+		$input = get_site_option( 'itsec_tweaks', false );
+		
+		if ( ! is_array( $input ) ) {
+			return $modification;
+		}
+		
+		
+		if ( isset( $input['file_editor'] ) && $input['file_editor'] ) {
+			$modification .= "define( 'DISALLOW_FILE_EDIT', true ); // " . __( 'Disable File Editor - Security > Settings > WordPress Tweaks > File Editor', 'it-l10n-ithemes-security-pro' ) . "\n";
+		}
+		
+		return $modification;
 	}
 
 	/**
@@ -1949,60 +1888,6 @@ print site_url();
 			update_site_option( 'itsec_tweaks', $_POST['itsec_tweaks'] ); //we must manually save network options
 
 		}
-
-	}
-
-	/**
-	 * Saves rewrite rules to file writer.
-	 *
-	 * @since 4.0.6
-	 *
-	 * @return void
-	 */
-	public function save_config_rules() {
-
-		global $itsec_files;
-
-		$config_rules = $itsec_files->get_config_rules();
-
-		foreach ( $config_rules as $key => $rule ) {
-
-			if ( isset( $rule['name'] ) && $rule['name'] == 'Tweaks' ) {
-				unset ( $config_rules[ $key ] );
-			}
-
-		}
-
-		$config_rules[] = $this->build_wpconfig_rules();
-
-		$itsec_files->set_config_rules( $config_rules );
-
-	}
-
-	/**
-	 * Saves rewrite rules to file writer.
-	 *
-	 * @since 4.0.6
-	 *
-	 * @return void
-	 */
-	public function save_rewrite_rules() {
-
-		global $itsec_files;
-
-		$rewrite_rules = $itsec_files->get_rewrite_rules();
-
-		foreach ( $rewrite_rules as $key => $rule ) {
-
-			if ( isset( $rule['name'] ) && $rule['name'] == 'Tweaks' ) {
-				unset ( $rewrite_rules[ $key ] );
-			}
-
-		}
-
-		$rewrite_rules[] = $this->build_rewrite_rules();
-
-		$itsec_files->set_rewrite_rules( $rewrite_rules );
 
 	}
 

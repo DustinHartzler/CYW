@@ -295,48 +295,43 @@ class ITSEC_Database_Prefix_Admin {
 
 		}
 
-		$rules[] = array(
-			'type'  => 'wpconfig',
-			'name'  => 'Database Prefix',
-			'rules' => array(
-				array(
-					'type'        => 'replace',
-					'search_text' => 'table_prefix',
-					'rule'        => "\$table_prefix = '" . $new_prefix . "';",
-				),
-			),
-		);
 
-		$itsec_files->set_wpconfig( $rules );
 
-		$configs = $itsec_files->save_wpconfig();
-
-		if ( is_array( $configs ) ) {
-
-			if ( $configs['success'] === false ) {
-
-				$type    = 'error';
-				$message = $configs['text'];
-
-				add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $message, $type );
-
-			}
-
+		require_once( trailingslashit( $GLOBALS['itsec_globals']['plugin_dir'] ) . 'core/lib/class-itsec-lib-config-file.php' );
+		require_once( trailingslashit( $GLOBALS['itsec_globals']['plugin_dir'] ) . 'core/lib/class-itsec-lib-file.php' );
+		
+		$config_file_path = ITSEC_Lib_Config_File::get_wp_config_file_path();
+		$config = ITSEC_Lib_File::read( $config_file_path );
+		$error = '';
+		
+		if ( is_wp_error( $config ) ) {
+			$error = sprintf( __( 'Unable to read the <code>wp-config.php</code> file in order to update the Database Prefix. Error details as follows: %1$s (%2$s)', 'it-l10n-ithemes-security-pro' ), $config->get_error_message(), $config->get_error_code() );
 		} else {
-
-			add_site_option( 'itsec_manual_update', true );
-
+			$regex = '/(\$table_prefix\s*=\s*)([\'"]).+?\\2(\s*;)/';
+			$config = preg_replace( $regex, "\${1}'$new_prefix'\${3}", $config );
+			
+			$write_result = ITSEC_Lib_File::write( $config_file_path, $config );
+			
+			if ( is_wp_error( $write_result ) ) {
+				$error = sprintf( __( 'Unable to update the <code>wp-config.php</code> file in order to update the Database Prefix. Error details as follows: %1$s (%2$s)', 'it-l10n-ithemes-security-pro' ), $config->get_error_message(), $config->get_error_code() );
+			}
 		}
+		
+		if ( ! empty( $error ) ) {
+			add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $error, 'error' );
+			add_site_option( 'itsec_manual_update', true );
+		}
+
 
 		$this->settings = $new_prefix; //this tells the form field that all went well.
 
 		if ( is_multisite() ) {
 
-			if ( isset( $type ) ) {
+			if ( ! empty( $error ) ) {
 
 				$error_handler = new WP_Error();
 
-				$error_handler->add( $type, $message );
+				$error_handler->add( 'error', $error );
 
 				$this->core->show_network_admin_notice( $error_handler );
 

@@ -1,6 +1,6 @@
 jQuery( document ).ready( function () {
 
-	jQuery( '#itsec_ssl_admin, #itsec_ssl_login' ).change( function () {
+	jQuery( '#itsec_ssl_admin' ).change( function () {
 
 		if ( this.checked ) {
 
@@ -8,7 +8,7 @@ jQuery( document ).ready( function () {
 
 			if ( ssl_confirm == false ) {
 
-				jQuery( '#itsec_ssl_login, #itsec_ssl_admin' ).attr( 'checked', false );
+				jQuery( '#itsec_ssl_admin' ).attr( 'checked', false );
 
 			}
 

@@ -323,13 +323,13 @@ class ITSEC_Tweaks {
 	}
 
 	/**
-	 * Removes the pingback ability from XMLRPC
+	 * Removes the pingback ability from XML-RPC
 	 *
 	 * @since 4.0.20
 	 *
-	 * @param array $methods XMLRPC methods
+	 * @param array $methods XML-RPC methods
 	 *
-	 * @return array XMLRPC methods
+	 * @return array XML-RPC methods
 	 */
 	public function xmlrpc_methods( $methods ) {
 

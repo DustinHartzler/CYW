@@ -1,45 +1,23 @@
 <?php
 
 class ITSEC_SSL {
-
-	private $settings;
-
-	function run() {
-
-		$this->settings = get_site_option( 'itsec_ssl' );
-
-		//Don't redirect any SSL if SSL is turned off.
-		if ( isset( $this->settings['frontend'] ) && $this->settings['frontend'] >= 1 ) {
-
-			add_action( 'template_redirect', array( $this, 'ssl_redirect' ) );
+	private $http_site_url;
+	private $https_site_url;
+	
+	public function run() {
+		add_action( 'template_redirect', array( $this, 'do_conditional_ssl_redirect' ), 0 );
+		
+		if ( is_ssl() ) {
+			$this->http_site_url = site_url( '', 'http' );
+			$this->https_site_url = site_url( '', 'https' );
+			
 			add_filter( 'the_content', array( $this, 'replace_content_urls' ) );
 			add_filter( 'script_loader_src', array( $this, 'script_loader_src' ) );
 			add_filter( 'style_loader_src', array( $this, 'style_loader_src' ) );
 			add_filter( 'upload_dir', array( $this, 'upload_dir' ) );
-
 		}
-
 	}
-
-	/**
-	 * Check if current url is using SSL
-	 *
-	 * @since 4.0
-	 *
-	 * @return bool true if ssl false if not
-	 *
-	 */
-	private function is_ssl() {
-
-		//modified logic courtesy of "Good Samaritan"
-		if ( ! empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443 ) {
-			return true;
-		}
-
-		return false;
-
-	}
-
+	
 	/**
 	 * Redirects to or from SSL where appropriate
 	 *
@@ -47,59 +25,63 @@ class ITSEC_SSL {
 	 *
 	 * @return void
 	 */
-	public function ssl_redirect() {
-
-		global $post;
-
-		$hide_options = get_site_option( 'itsec_hide_backend' );
-
-		if ( isset( $hide_options['enabled'] ) && $hide_options['enabled'] === true && $_SERVER['REQUEST_URI'] == ITSEC_Lib::get_home_root() . $hide_options['slug'] ) {
+	public function do_conditional_ssl_redirect() {
+		$hide_options = get_site_option( 'itsec_hide_backend', array() );
+		
+		if ( isset( $hide_options['enabled'] ) && ( $hide_options['enabled'] === true ) && ( $_SERVER['REQUEST_URI'] == ITSEC_Lib::get_home_root() . $hide_options['slug'] ) ) {
 			return;
 		}
-
-		if ( is_singular() && $this->settings['frontend'] == 1 ) {
-
-			$require_ssl = get_post_meta( $post->ID, 'itsec_enable_ssl', true );
-			$bwps_ssl    = get_post_meta( $post->ID, 'bwps_enable_ssl', true );
-
-			if ( $bwps_ssl == 1 ) {
-
-				$require_ssl = 1;
-				delete_post_meta( $post->ID, 'bwps_enable_ssl' );
-				update_post_meta( $post->ID, 'itsec_enable_ssl', true );
-
-			} elseif ( $bwps_ssl != 1 ) {
-
-				delete_post_meta( $post->ID, 'bwps_enable_ssl' );
-
-				if ( $require_ssl != 1 ) {
-					delete_post_meta( $post->ID, 'itsec_enable_ssl' );
+		
+		
+		$settings = get_site_option( 'itsec_ssl', array() );
+		
+		if ( 2 == $settings['frontend'] ) {
+			$protocol = 'https';
+		} else if ( ( 1 == $settings['frontend'] ) && is_singular() ) {
+			global $post;
+			
+			$bwps_ssl = get_post_meta( $post->ID, 'bwps_enable_ssl' );
+			
+			if ( ! empty( $bwps_ssl ) ) {
+				if ( $bwps_ssl[0] ) {
+					$protocol = 'https';
+					update_post_meta( $post->ID, 'itsec_enable_ssl', true );
 				}
-
+				
+				delete_post_meta( $post->ID, 'bwps_enable_ssl' );
 			}
-
-			if ( ( $require_ssl == 1 && $this->is_ssl() === false ) || ( $require_ssl != 1 && $this->is_ssl() === true ) ) {
-
-				$href = ( $_SERVER['SERVER_PORT'] == '443' ? 'http' : 'https' ) . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-				wp_redirect( esc_url( $href ), 302 );
-				exit();
-
+			
+			if ( ! isset( $protocol ) ) {
+				$enable_ssl = get_post_meta( $post->ID, 'itsec_enable_ssl' );
+				
+				if ( ! empty( $enable_ssl ) ) {
+					if ( $enable_ssl[0] ) {
+						$protocol = 'https';
+					} else {
+						delete_post_meta( $post->ID, 'itsec_enable_ssl' );
+					}
+				}
 			}
-
-		} else {
-
-			if ( ( $this->settings['frontend'] == 2 && ! $this->is_ssl() ) || ( ( $this->settings['frontend'] == 0 || $this->settings['frontend'] == 1 ) && $this->is_ssl() ) ) {
-
-				$href = ( $_SERVER['SERVER_PORT'] == '443' ? 'http' : 'https' ) . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-				wp_redirect( esc_url( $href ), 302 );
-				exit();
-
-			}
-
 		}
-
+		
+		if ( ! isset( $protocol ) ) {
+			$protocol = 'http';
+		}
+		
+		$is_ssl = is_ssl();
+		
+		if ( $is_ssl && ( 'http' == $protocol ) ) {
+			$redirect = "http://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
+		} else if ( ! $is_ssl && ( 'https' == $protocol ) ) {
+			$redirect = "https://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
+		}
+		
+		if ( isset( $redirect ) ) {
+			wp_redirect( $redirect, 302 );
+			exit();
+		}
 	}
-
+	
 	/**
 	 * Replace urls in content with ssl
 	 *
@@ -110,14 +92,9 @@ class ITSEC_SSL {
 	 * @return string the content
 	 */
 	public function replace_content_urls( $content ) {
-
-		if ( $this->is_ssl() ) {
-			$content = str_replace( site_url( '', 'http:' ), site_url( '', 'https:' ), $content );
-		}
-
-		return $content;
+		return str_replace( $this->http_site_url, $this->https_site_url, $content );
 	}
-
+	
 	/**
 	 * Replace urls in scripts with ssl
 	 *
@@ -128,11 +105,9 @@ class ITSEC_SSL {
 	 * @return string the url
 	 */
 	public function script_loader_src( $script_loader_src ) {
-
-		return str_replace( site_url( '', 'http:' ), site_url( '', 'https:' ), $script_loader_src );;
-
+		return str_replace( $this->http_site_url, $this->https_site_url, $script_loader_src );
 	}
-
+	
 	/**
 	 * Replace urls in styles with ssl
 	 *
@@ -143,11 +118,9 @@ class ITSEC_SSL {
 	 * @return string the url
 	 */
 	public function style_loader_src( $style_loader_src ) {
-
-		return str_replace( site_url( '', 'http:' ), site_url( '', 'https:' ), $style_loader_src );;
-
+		return str_replace( $this->http_site_url, $this->https_site_url, $style_loader_src );
 	}
-
+	
 	/**
 	 * filter uploads dir so that plugins using it to determine upload URL also work
 	 *
@@ -157,12 +130,10 @@ class ITSEC_SSL {
 	 *
 	 * @return array
 	 */
-	public static function upload_dir( $upload_dir ) {
-
-		$upload_dir['url']     = str_replace( site_url( '', 'http:' ), site_url( '', 'https:' ), $upload_dir['url'] );
-		$upload_dir['baseurl'] = str_replace( site_url( '', 'http:' ), site_url( '', 'https:' ), $upload_dir['baseurl'] );
-
+	public function upload_dir( $upload_dir ) {
+		$upload_dir['url'] = str_replace( $this->http_site_url, $this->https_site_url, $upload_dir['url'] );
+		$upload_dir['baseurl'] = str_replace( $this->http_site_url, $this->https_site_url, $upload_dir['baseurl'] );
+		
 		return $upload_dir;
 	}
-
 }

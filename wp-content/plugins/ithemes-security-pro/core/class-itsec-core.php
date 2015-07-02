@@ -411,8 +411,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 
 			}
 
-			//load the text domain
-			load_plugin_textdomain( 'it-l10n-ithemes-security-pro', false, trailingslashit( $itsec_globals['plugin_dir'] ) . 'lang' );
+			$this->load_textdomain();
 
 			//builds admin menus after modules are loaded
 			if ( is_admin() ) {
@@ -513,9 +512,30 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 
 			add_action( 'itsec_wpconfig_metabox', array( $itsec_files, 'config_metabox_contents' ) );
 			add_action( 'itsec_rewrite_metabox', array( $itsec_files, 'rewrite_metabox_contents' ) );
-
 		}
-
+		
+		/**
+		 * Load the text translations.
+		 *
+		 * The translations are loaded from WP_LANG_DIR/plugins/
+		 */
+		private function load_textdomain() {
+			$plugin_dir = dirname( dirname( __FILE__ ) );
+			
+			if ( is_dir( "$plugin_dir/modules/pro" ) ) {
+				$plugin_name = 'ithemes-security-pro';
+				$domain = 'it-l10n-ithemes-security-pro';
+			} else {
+				$plugin_name = 'better-wp-security';
+				$domain = 'it-l10n-better-wp-security';
+			}
+			
+			$locale = apply_filters( 'plugin_locale', get_locale(), 'it-l10n-ithemes-security-pro' );
+			
+			load_textdomain( 'it-l10n-ithemes-security-pro', WP_LANG_DIR . "/plugins/$plugin_name/$domain-$locale.mo" );
+			load_plugin_textdomain( 'it-l10n-ithemes-security-pro', false, basename( $plugin_dir ) . '/lang/' );
+		}
+		
 		/**
 		 * Add action link to plugin page.
 		 *
@@ -1788,7 +1808,7 @@ if ( ! class_exists( 'ITSEC_Core' ) ) {
 
 					foreach ( $error_messages as $error ) {
 
-						$itsec_saved_network_notices = '<div id="setting-error-settings_updated" class="' . sanitize_text_field( $type ) . ' settings-error"><p><strong>' . sanitize_text_field( $error ) . '</strong></p></div>';
+						$itsec_saved_network_notices .= '<div id="setting-error-settings_updated" class="' . sanitize_text_field( $type ) . ' settings-error"><p><strong>' . sanitize_text_field( $error ) . '</strong></p></div>';
 					}
 
 				}

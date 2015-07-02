@@ -15,14 +15,10 @@ class ITSEC_Hide_Backend_Admin {
 
 		add_filter( 'itsec_file_modules', array( $this, 'register_file' ) ); //register tooltip action
 		add_filter( 'itsec_tooltip_modules', array( $this, 'register_tooltip' ) ); //register tooltip action
-		add_action( 'itsec_add_admin_meta_boxes', array(
-			$this, 'add_admin_meta_boxes'
-		) ); //add meta boxes to admin page
+		add_action( 'itsec_add_admin_meta_boxes', array( $this, 'add_admin_meta_boxes' ) ); //add meta boxes to admin page
 		add_action( 'itsec_admin_init', array( $this, 'initialize_admin' ) ); //initialize admin area
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_script' ) ); //enqueue scripts for admin page
-		add_filter( 'itsec_add_dashboard_status', array(
-			$this, 'dashboard_status'
-		) ); //add information for plugin status
+		add_filter( 'itsec_add_dashboard_status', array( $this, 'dashboard_status' ) ); //add information for plugin status
 		add_filter( 'itsec_tracking_vars', array( $this, 'tracking_vars' ) );
 
 		//manually save options on multisite
@@ -30,6 +26,9 @@ class ITSEC_Hide_Backend_Admin {
 			add_action( 'itsec_admin_init', array( $this, 'save_network_options' ) ); //save multisite options
 		}
 
+
+		add_filter( 'itsec_filter_apache_server_config_modification', array( $this, 'filter_apache_server_config_modification' ) );
+		add_filter( 'itsec_filter_nginx_server_config_modification', array( $this, 'filter_nginx_server_config_modification' ) );
 	}
 
 	/**
@@ -52,12 +51,11 @@ class ITSEC_Hide_Backend_Admin {
 		);
 
 		$this->core->add_toc_item(
-		           array(
-			           'id'    => $id,
-			           'title' => $title,
-		           )
+			array(
+				'id'    => $id,
+				'title' => $title,
+			)
 		);
-
 	}
 
 	/**
@@ -114,66 +112,46 @@ class ITSEC_Hide_Backend_Admin {
 
 	}
 
-	/**
-	 * Build rewrite rules
-	 *
-	 * @since 4.0
-	 *
-	 * @param  array $input options to build rules from
-	 *
-	 * @return array         rules to write
-	 */
-	public static function build_rewrite_rules( $input = null ) {
-
+	public function filter_apache_server_config_modification( $modification ) {
+		$input = get_site_option( 'itsec_hide_backend' );
+		
+		if ( true != $input['enabled'] ) {
+			return $modification;
+		}
+		
+		
 		$home_root = ITSEC_Lib::get_home_root();
-
-		$server_type = ITSEC_Lib::get_server(); //Get the server type to build the right rules
-
-		//Get the rules from the database if input wasn't sent
-		if ( $input === null ) {
-			$input = get_site_option( 'itsec_hide_backend' );
+		
+		$modification .= "\n";
+		$modification .= "\t# " . __( 'Enable the hide backend feature - Security > Settings > Hide Login Area > Hide Backend', 'it-l10n-ithemes-security-pro' ) . "\n";
+		$modification .= "\tRewriteRule ^($home_root)?{$input['slug']}/?$ {$home_root}wp-login.php [QSA,L]\n";
+		
+		if ( 'wp-register.php' != $input['register'] ) {
+			$modification .= "\tRewriteRule ^($home_root)?{$input['register']}/?$ /wplogin?action=register [QSA,L]\n";
 		}
-
-		$rules = ''; //initialize all rules to blank string
-
-		//don't add any rules if the module hasn't been enabled
-		if ( $input['enabled'] == true ) {
-
-			if ( $server_type == 'nginx' ) {
-
-				$rules .= "\t# " . __( 'Rules to hide the dashboard', 'it-l10n-ithemes-security-pro' ) . PHP_EOL . "\trewrite ^(" . $home_root . ")?" . $input['slug'] . "/?$ " . $home_root . "wp-login.php?\$query_string break;" . PHP_EOL;
-
-			} else {
-
-				$rules .= "\t# " . __( 'Rules to hide the dashboard', 'it-l10n-ithemes-security-pro' ) . PHP_EOL . "\tRewriteRule ^(" . $home_root . ")?" . $input['slug'] . "/?$ " . $home_root . "wp-login.php [QSA,L]" . PHP_EOL;
-
-			}
-
-			if ( $input['register'] != 'wp-register.php' ) {
-
-				if ( $server_type == 'nginx' ) {
-
-					$rules .= "\trewrite ^(" . $home_root . ")?" . $input['register'] . "/?$ " . $home_root . $input['slug'] . "?action=register break;" . PHP_EOL;
-
-				} else {
-
-					$rules .= "\tRewriteRule ^(" . $home_root .")?" .  $input['register'] . "/?$ /wplogin?action=register [QSA,L]" . PHP_EOL;
-
-				}
-
-			}
-
+		
+		return $modification;
+	}
+	
+	public function filter_nginx_server_config_modification( $modification ) {
+		$input = get_site_option( 'itsec_hide_backend' );
+		
+		if ( true != $input['enabled'] ) {
+			return $modification;
 		}
-
-		if ( strlen( $rules ) > 0 ) {
-			$rules = explode( PHP_EOL, $rules );
-		} else {
-			$rules = false;
+		
+		
+		$home_root = ITSEC_Lib::get_home_root();
+		
+		$modification .= "\n";
+		$modification .= "\t# " . __( 'Enable the hide backend feature - Security > Settings > Hide Login Area > Hide Backend', 'it-l10n-ithemes-security-pro' ) . "\n";
+		$modification .= "\trewrite ^($home_root)?{$input['slug']}/?$ {$home_root}wp-login.php?\$query_string break;\n";
+		
+		if ( 'wp-register.php' != $input['register'] ) {
+			$modification .= "\trewrite ^($home_root)?{$input['register']}/?$ {$home_root}{$input['slug']}?action=register break;\n";
 		}
-
-		//create a proper array for writing
-		return array( 'type' => 'htaccess', 'priority' => 9, 'name' => 'Hide Backend', 'rules' => $rules, );
-
+		
+		return $modification;
 	}
 
 	/**
@@ -656,33 +634,6 @@ class ITSEC_Hide_Backend_Admin {
 			update_site_option( 'itsec_hide_backend', $_POST['itsec_hide_backend'] ); //we must manually save network options
 
 		}
-
-	}
-
-	/**
-	 * Saves rewrite rules to file writer.
-	 *
-	 * @since 4.0.6
-	 *
-	 * @return void
-	 */
-	public function save_rewrite_rules() {
-
-		global $itsec_files;
-
-		$rewrite_rules = $itsec_files->get_rewrite_rules();
-
-		foreach ( $rewrite_rules as $key => $rule ) {
-
-			if ( isset( $rule['name'] ) && $rule['name'] == 'Hide Backend' ) {
-				unset ( $rewrite_rules[$key] );
-			}
-
-		}
-
-		$rewrite_rules[] = $this->build_rewrite_rules();
-
-		$itsec_files->set_rewrite_rules( $rewrite_rules );
 
 	}
 

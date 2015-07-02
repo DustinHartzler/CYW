@@ -27,9 +27,9 @@ if ( ! class_exists( 'ITSEC_SSL_Setup' ) ) {
 					case 'upgrade':
 						$this->execute_upgrade();
 						break;
-					case 'deactivate':
-						$this->execute_deactivate();
-						break;
+//					case 'deactivate':
+//						$this->execute_deactivate();
+//						break;
 					case 'uninstall':
 						$this->execute_uninstall();
 						break;
@@ -86,27 +86,11 @@ if ( ! class_exists( 'ITSEC_SSL_Setup' ) ) {
 		}
 
 		/**
-		 * Execute module deactivation
-		 *
-		 * @return void
-		 */
-		public function execute_deactivate() {
-
-			global $itsec_files;
-
-			$config_rules[] = ITSEC_SSL_Admin::build_wpconfig_rules( null, true );
-			$itsec_files->set_wpconfig( $config_rules );
-
-		}
-
-		/**
 		 * Execute module uninstall
 		 *
 		 * @return void
 		 */
 		public function execute_uninstall() {
-
-			$this->execute_deactivate();
 
 			delete_site_option( 'itsec_ssl' );
 

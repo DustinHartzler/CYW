@@ -3,7 +3,7 @@
 /*
 Provides a simple interface for connecting iThemes' packages with the updater API.
 Written by Chris Jean for iThemes.com
-Version 1.4.0
+Version 1.4.1
 
 Version History
 	1.0.0 - 2013-04-11 - Chris Jean
@@ -24,6 +24,10 @@ Version History
 		Improved cache flush handling.
 		Removed server-cache setting change handler.
 		Added timeout-multiplier setting change handler.
+	1.4.1 - 2015-04-23 - Chris Jean
+		Added "plugin" entry for plugins in order to handle changes in WordPress 4.2.
+		Added "theme" entry for themes in order to handle changes in WordPress 4.2.
+		Added support for both "autoupdate" and "upgrade_notice" fields to be supplied from the server.
 */
 
 
@@ -120,19 +124,35 @@ class Ithemes_Updater_Updates {
 				$update = array(
 					'id'          => 0,
 					'slug'        => dirname( $path ),
+					'plugin'      => $path,
 					'new_version' => $data['available'],
 					'url'         => $data['info-url'],
 					'package'     => $data['package-url'],
 				);
 				
+				if ( isset( $data['autoupdate'] ) ) {
+					$update['autoupdate'] = $data['autoupdate'];
+				}
+				if ( isset( $data['upgrade_notice'] ) ) {
+					$update['upgrade_notice'] = $data['upgrade_notice'];
+				}
+				
 				$update = (object) $update;
 			}
 			else {
 				$update = array(
+					'theme'       => $path,
 					'new_version' => $data['available'],
 					'url'         => self_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . dirname( $path ) . '&section=changelog&TB_iframe=true&width=600&height=800' ),
 					'package'     => $data['package-url'],
 				);
+				
+				if ( isset( $data['autoupdate'] ) ) {
+					$update['autoupdate'] = $data['autoupdate'];
+				}
+				if ( isset( $data['upgrade_notice'] ) ) {
+					$update['upgrade_notice'] = $data['upgrade_notice'];
+				}
 				
 				$path = dirname( $path );
 			}

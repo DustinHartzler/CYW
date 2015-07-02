@@ -3,7 +3,7 @@
 class ITSEC_Content_Directory_Admin {
 
 	private
-		$settings,
+		$last_error,
 		$core,
 		$module_path;
 
@@ -12,21 +12,35 @@ class ITSEC_Content_Directory_Admin {
 		$this->core        = $core;
 		$this->module_path = ITSEC_Lib::get_module_path( __FILE__ );
 
-		if ( strpos( WP_CONTENT_DIR, 'wp-content' ) === false || strpos( WP_CONTENT_URL, 'wp-content' ) === false ) {
-			$this->settings = true;
-		} else {
-			$this->settings = false;
-		}
-
-		add_action( 'admin_enqueue_scripts', array( $this, 'admin_script' ) ); //enqueue scripts for admin page
-		add_action( 'itsec_add_admin_meta_boxes', array( $this, 'add_admin_meta_boxes' ) ); //add meta boxes to admin page
-		add_filter( 'itsec_add_dashboard_status', array( $this, 'dashboard_status' ) ); //add information for plugin status
 		add_filter( 'itsec_tracking_vars', array( $this, 'tracking_vars' ) );
+		add_filter( 'itsec_add_dashboard_status', array( $this, 'dashboard_status' ) );
 
 		if ( ! empty( $_POST ) ) {
-			add_action( 'itsec_admin_init', array( $this, 'initialize_admin' ) ); //initialize admin area
+			add_action( 'itsec_admin_init', array( $this, 'initialize_admin' ) );
 		}
 
+		if ( ! $this->is_custom_directory() ) {
+			// Changing the content directory is only supported when the content directory is set to default values.
+			
+			add_action( 'admin_enqueue_scripts', array( $this, 'admin_script' ) );
+			add_action( 'itsec_add_admin_meta_boxes', array( $this, 'add_admin_meta_boxes' ) );
+		}
+	}
+	
+	protected function is_custom_directory() {
+		if ( isset( $GLOBALS['__itsec_content_directory_is_custom_directory'] ) ) {
+			return $GLOBALS['__itsec_content_directory_is_custom_directory'];
+		}
+		
+		if ( ABSPATH . 'wp-content' !== WP_CONTENT_DIR ) {
+			$GLOBALS['__itsec_content_directory_is_custom_directory'] = true;
+		} else if ( get_option( 'siteurl' ) . '/wp-content' !== WP_CONTENT_URL ) {
+			$GLOBALS['__itsec_content_directory_is_custom_directory'] = true;
+		} else {
+			$GLOBALS['__itsec_content_directory_is_custom_directory'] = false;
+		}
+		
+		return $GLOBALS['__itsec_content_directory_is_custom_directory'];
 	}
 
 	/**
@@ -35,22 +49,14 @@ class ITSEC_Content_Directory_Admin {
 	 * @param array $available_pages array of available page_hooks
 	 */
 	public function add_admin_meta_boxes() {
-
-		if ( ! $this->settings === true ) {
-
-			//add metaboxes
-
-			add_meta_box(
-				'content_directory_options',
-				__( 'Change Content Directory', 'it-l10n-ithemes-security-pro' ),
-				array( $this, 'metabox_advanced_settings' ),
-				'security_page_toplevel_page_itsec_advanced',
-				'advanced',
-				'core'
-			);
-
-		}
-
+		add_meta_box(
+			'content_directory_options',
+			__( 'Change Content Directory', 'it-l10n-ithemes-security-pro' ),
+			array( $this, 'metabox_advanced_settings' ),
+			'security_page_toplevel_page_itsec_advanced',
+			'advanced',
+			'core'
+		);
 	}
 
 	/**
@@ -79,7 +85,7 @@ class ITSEC_Content_Directory_Admin {
 	 */
 	public function dashboard_status( $statuses ) {
 
-		if ( $this->settings === true ) {
+		if ( $this->is_custom_directory() ) {
 
 			$status_array = 'safe-low';
 			$status       = array(
@@ -110,7 +116,7 @@ class ITSEC_Content_Directory_Admin {
 	 */
 	public function initialize_admin() {
 
-		if ( ! $this->settings === true && isset( $_POST['itsec_enable_content_dir'] ) && $_POST['itsec_enable_content_dir'] == 'true' ) {
+		if ( ! $this->is_custom_directory() && isset( $_POST['itsec_enable_content_dir'] ) && 'true' == $_POST['itsec_enable_content_dir'] ) {
 
 			if ( ! wp_verify_nonce( $_POST['wp_nonce'], 'ITSEC_admin_save' ) ) {
 
@@ -133,15 +139,7 @@ class ITSEC_Content_Directory_Admin {
 
 		global $itsec_globals;
 
-		if ( $this->settings !== true ) {
-
-			$content = '<p>' . __( 'By default, WordPress puts all your content (including images, plugins, themes, uploads and more) in a directory called "wp-content." This default folder name makes it easy for attackers to scan for files with security vulnerabilities on your WordPress installation because they know where the vulnerable files are located. Moving the "wp-content" folder can make it more difficult for an attacker to find problems with your site, as scans of your site\'s file system will not produce any results.', 'it-l10n-ithemes-security-pro' ) . '</p>';
-			$content .= '<p>' . __( 'This tool will not allow further changes to your wp-content folder once it has been renamed in order to avoid accidentally breaking the site later. Uninstalling this plugin will not revert the changes made by this feature.', 'it-l10n-ithemes-security-pro' ) . '</p>';
-			$content .= '<p>' . __( 'Changing the name of the wp-content directory may in fact break plugins and themes that have "hard-coded" it into their design rather than calling it dynamically.', 'it-l10n-ithemes-security-pro' ) . '</p>';
-			$content .= sprintf( '<div class="itsec-warning-message"><span>%s: </span><a href="?page=toplevel_page_itsec_backups">%s</a> %s</div>', __( 'WARNING', 'it-l10n-ithemes-security-pro' ), __( 'Backup your database', 'it-l10n-ithemes-security-pro' ), __( 'before using this tool.', 'it-l10n-ithemes-security-pro' ) );
-			$content .= '<div class="itsec-warning-message">' . __( 'Please note: Changing the name of your wp-content directory on a site that already has images and other content referencing it will break your site. For this reason, we highly recommend you only try this technique on a fresh WordPress install.', 'it-l10n-ithemes-security-pro' ) . '</div>';
-
-		} else {
+		if ( $this->is_custom_directory() ) {
 
 			if ( isset( $_POST['itsec_one_time_save'] ) ) {
 
@@ -157,41 +155,44 @@ class ITSEC_Content_Directory_Admin {
 			$content .= '<strong>' . $dir_name . '</strong></p>';
 			$content .= '<p>' . __( 'No further actions are available on this page.', 'it-l10n-ithemes-security-pro' ) . '</p>';
 
+		} else {
+
+			$content = '<p>' . __( 'By default, WordPress puts all your content (including images, plugins, themes, uploads and more) in a directory called "wp-content." This default folder name makes it easy for attackers to scan for files with security vulnerabilities on your WordPress installation because they know where the vulnerable files are located. Moving the "wp-content" folder can make it more difficult for an attacker to find problems with your site, as scans of your site\'s file system will not produce any results.', 'it-l10n-ithemes-security-pro' ) . '</p>';
+			$content .= '<p>' . __( 'This tool will not allow further changes to your wp-content folder once it has been renamed in order to avoid accidentally breaking the site later. Uninstalling this plugin will not revert the changes made by this feature.', 'it-l10n-ithemes-security-pro' ) . '</p>';
+			$content .= '<p>' . __( 'Changing the name of the wp-content directory may in fact break plugins and themes that have "hard-coded" it into their design rather than calling it dynamically.', 'it-l10n-ithemes-security-pro' ) . '</p>';
+			$content .= sprintf( '<div class="itsec-warning-message"><span>%s: </span><a href="?page=toplevel_page_itsec_backups">%s</a> %s</div>', __( 'WARNING', 'it-l10n-ithemes-security-pro' ), __( 'Backup your database', 'it-l10n-ithemes-security-pro' ), __( 'before using this tool.', 'it-l10n-ithemes-security-pro' ) );
+			$content .= '<div class="itsec-warning-message">' . __( 'Please note: Changing the name of your wp-content directory on a site that already has images and other content referencing it will break your site. For this reason, we highly recommend you only try this technique on a fresh WordPress install.', 'it-l10n-ithemes-security-pro' ) . '</div>';
+			$content .= '<div class="itsec-warning-message">' . __( '<strong>WARNING:</strong> BackupBuddy only works with sites that have the standard wp-content folder name and location. If you have altered the name or the location of this folder, BackupBuddy will be unable to properly create backups or migrate the site.', 'it-l10n-ithemes-security-pro' ) . '</div>';
+
 		}
 
 		echo $content;
 
 		if ( isset( $itsec_globals['settings']['write_files'] ) && $itsec_globals['settings']['write_files'] === true ) {
 
-			if ( $this->settings !== true ) { //only show form if user the content directory hasn't already been changed
+			if ( ! $this->is_custom_directory() ) {
 				?>
 
-				<form method="post" action="?page=toplevel_page_itsec_advanced&settings-updated=true"
-				      class="itsec-form">
+				<form method="post" action="?page=toplevel_page_itsec_advanced&settings-updated=true" class="itsec-form">
 
 					<?php wp_nonce_field( 'ITSEC_admin_save', 'wp_nonce' ); ?>
 
 					<table class="form-table">
 						<tr valign="top">
 							<th scope="row" class="settinglabel">
-								<label
-									for="itsec_enable_content_dir"><?php _e( 'Enable Change Directory Name', 'it-l10n-ithemes-security-pro' ); ?></label>
+								<label for="itsec_enable_content_dir"><?php _e( 'Enable Change Directory Name', 'it-l10n-ithemes-security-pro' ); ?></label>
 							</th>
 							<td class="settingfield">
-								<?php //username field ?>
-								<input type="checkbox" id="itsec_enable_content_dir" name="itsec_enable_content_dir"
-								       value="true"/>
+								<input type="checkbox" id="itsec_enable_content_dir" name="itsec_enable_content_dir" value="true"/>
 
 								<p class="description"><?php _e( 'Check this box to enable content directory renaming.', 'it-l10n-ithemes-security-pro' ); ?></p>
 							</td>
 						</tr>
 						<tr valign="top" id="content_directory_name_field">
 							<th scope="row" class="settinglabel">
-								<label
-									for="itsec_content_name"><?php _e( 'Directory Name', 'it-l10n-ithemes-security-pro' ); ?></label>
+								<label for="itsec_content_name"><?php _e( 'Directory Name', 'it-l10n-ithemes-security-pro' ); ?></label>
 							</th>
 							<td class="settingfield">
-								<?php //username field ?>
 								<input id="itsec_content_name" name="name" type="text" value="wp-content"/>
 
 								<p class="description"><?php _e( 'Enter a new directory name to replace "wp-content." You may need to log in again after performing this operation.', 'it-l10n-ithemes-security-pro' ); ?></p>
@@ -199,8 +200,7 @@ class ITSEC_Content_Directory_Admin {
 						</tr>
 					</table>
 					<p class="submit">
-						<input type="submit" class="button-primary"
-						       value="<?php _e( 'Change Content Directory', 'it-l10n-ithemes-security-pro' ); ?>"/>
+						<input type="submit" class="button-primary" value="<?php _e( 'Change Content Directory', 'it-l10n-ithemes-security-pro' ); ?>"/>
 					</p>
 				</form>
 
@@ -209,135 +209,111 @@ class ITSEC_Content_Directory_Admin {
 			}
 
 		} else {
-
-			$content = sprintf(
-				'<p>%s <a href="?page=toplevel_page_itsec_settings">%s</a> %s',
-				__( 'You must allow this plugin to write to the wp-config.php file on the', 'it-l10n-ithemes-security-pro' ),
-				__( 'Settings', 'it-l10n-ithemes-security-pro' ),
-				__( 'page to use this feature.', 'it-l10n-ithemes-security-pro' )
-			);
-
-			echo $content;
-
+			echo '<p>' . sprintf( __( 'You must allow this plugin to write to the wp-config.php file on the <a href="%s">Settings</a> page to use this feature.', 'it-l10n-ithemes-security-pro' ), admin_url( 'admin.php?page=toplevel_page_itsec_settings' ) ) . '</p>';
 		}
 
 	}
 
-	/**
-	 * Build wp-config.php rules
-	 *
-	 * @param  array $input options to build rules from
-	 *
-	 * @return array         rules to write
-	 */
-	public function build_wpconfig_rules( $rules_array, $input = null ) {
-
-		//Get the rules from the database if input wasn't sent
-		if ( $input === null ) {
-			return $rules_array;
-		}
-
-		$new_dir = trailingslashit( ABSPATH ) . $input;
-
-		$rules[] = array(
-			'type' => 'add', 'search_text' => '//Do not delete these. Doing so WILL break your site.',
-			'rule' => "//Do not delete these. Doing so WILL break your site.",
-		);
-
-		$rules[] = array(
-			'type' => 'add', 'search_text' => 'WP_CONTENT_URL',
-			'rule' => "define( 'WP_CONTENT_URL', '" . trailingslashit( get_option( 'siteurl' ) ) . $input . "' );",
-		);
-
-		$rules[] = array(
-			'type' => 'add', 'search_text' => 'WP_CONTENT_DIR',
-			'rule' => "define( 'WP_CONTENT_DIR', '" . $new_dir . "' );",
-		);
-
-		$rules_array[] = array( 'type' => 'wpconfig', 'name' => 'Content Directory', 'rules' => $rules, );
-
-		return $rules_array;
-
-	}
-
-	/**
-	 * Sanitize and validate input
-	 *
-	 */
 	public function process_directory() {
-
-		global $itsec_files;
-
-		//suppress error messages due to timing
-		error_reporting( 0 );
-		@ini_set( 'display_errors', 0 );
-
-		$dir_name      = sanitize_file_name( $_POST['name'] );
-		$old_directory = '';
-		$new_directory = '';
-
-		if ( strlen( $dir_name ) <= 2 ) { //make sure the directory name is at least 2 characters
-
-			$type    = 'error';
-			$message = __( 'Please choose a directory name that is greater than 2 characters in length.', 'it-l10n-ithemes-security-pro' );
-
-			add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $message, $type );
-
-		} elseif ( $dir_name === 'wp-content' ) {
-
-			$type    = 'error';
-			$message = __( 'You have not chosen a new name for wp-content. Nothing was saved.', 'it-l10n-ithemes-security-pro' );
-
-			add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $message, $type );
-
-		} else { //process the name change
-
-			$rules = $this->build_wpconfig_rules( array(), $dir_name );
-
-			$itsec_files->set_wpconfig( $rules );
-
-			$configs = $itsec_files->save_wpconfig();
-
-			if ( is_array( $configs ) ) {
-
-				if ( $configs['success'] === false ) {
-
-					$type    = 'error';
-					$message = $configs['text'];
-
-					add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $message, $type );
-
-				}
-
-				$old_directory = WP_CONTENT_DIR;
-				$new_directory = trailingslashit( ABSPATH ) . $dir_name;
-
-				$renamed = rename( $old_directory, $new_directory );
-
-				if ( ! $renamed ) {
-
-					$type    = 'error';
-					$message = __( 'Unable to rename the wp-content folder. Operation cancelled.', 'it-l10n-ithemes-security-pro' );
-
-					add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $message, $type );
-
-				}
-
-			} else {
-
-				add_site_option( 'itsec_manual_update', true );
-
+		if ( $this->is_custom_directory() ) {
+			$this->show_error( __( 'The <code>wp-content</code> directory has already been renamed. No Directory Name changes have been made.', 'it-l10n-ithemes-security-pro' ) );
+			$this->show_network_admin_notice();
+			
+			return;
+		}
+		
+		
+		$dir_name = sanitize_file_name( $_POST['name'] );
+		
+		if ( empty( $dir_name ) ) {
+			$this->show_error( __( 'The Directory Name cannot be empty.', 'it-l10n-ithemes-security-pro' ) );
+			$this->show_network_admin_notice();
+			
+			return;
+		}
+		
+		if ( 'wp-content' === $dir_name ) {
+			$this->show_error( __( 'You have not chosen a new name for wp-content. Nothing was saved.', 'it-l10n-ithemes-security-pro' ) );
+			$this->show_network_admin_notice();
+			
+			return;
+		}
+		
+		if ( preg_match( '{^(?:/|\\|[a-z]:)}i', $dir_name ) ) {
+			$this->show_error( sprintf( __( 'The Directory Name cannot be an absolute path. Please supply a path that is relative to <code>ABSPATH</code> (<code>%s</code>).', 'it-l10n-ithemes-security-pro' ), ABSPATH ) );
+			$this->show_network_admin_notice();
+			
+			return;
+		}
+		
+		
+		$dir = ABSPATH . $dir_name;
+		
+		if ( file_exists( $dir ) ) {
+			$this->show_error( sprintf( __( 'A file or directory already exists at <code>%s</code>. No Directory Name changes have been made. Please choose a new Directory Name or remove the existing file or directory and try again.', 'it-l10n-ithemes-security-pro' ), $dir ) );
+			$this->show_network_admin_notice();
+			
+			return;
+		}
+		
+		
+		require_once( trailingslashit( $GLOBALS['itsec_globals']['plugin_dir'] ) . 'core/lib/class-itsec-lib-config-file.php' );
+		
+		
+		$old_permissions = ITSEC_Lib_Directory::get_permissions( WP_CONTENT_DIR );
+		$result = rename( WP_CONTENT_DIR, $dir );
+		
+		if ( ! $result ) {
+			$this->show_error( sprintf( __( 'Unable to rename the <code>wp-content</code> directory to <code>%s</code>. This could indicate a file permission issue or that your server does not support the supplied name as a valid directory name. No config file or directory changes have been made.', 'it-l10n-ithemes-security-pro' ), $dir_name ) );
+			$this->show_network_admin_notice();
+			
+			return;
+		}
+		
+		$new_permissions = ITSEC_Lib_Directory::get_permissions( $dir );
+		
+		if ( is_int( $old_permissions) && is_int( $new_permissions ) && ( $old_permissions != $new_permissions ) ) {
+			$result = ITSEC_Lib_Directory::chmod( $dir, $old_permissions );
+			
+			if ( is_wp_error( $result ) ) {
+				$this->show_error( sprintf( __( 'Unable to set the permissions of the new Directory Name (<code>%1$s</code>) to match the permissions of the old Directory Name. You may have to manually change the permissions of the directory to <code>%2$s</code> in order for your site to function properly.', 'it-l10n-ithemes-security-pro' ), $dir_name, $old_permissions ) );
 			}
-
+		}
+		
+		
+		$php_content_dir = str_replace( "'", "\\'", $dir );
+		$php_content_url = str_replace( "'", "\\'", get_option( 'siteurl' ) . "/$dir_name" );
+		
+		$modification  = "define( 'WP_CONTENT_DIR', '$php_content_dir' ); // " . __( 'Do not remove. Removing this line could break your site. Added by Security > Settings > Change Content Directory.', 'it-l10n-ithemes-security-pro' ) . "\n";
+		$modification .= "define( 'WP_CONTENT_URL', '$php_content_url' ); // " . __( 'Do not remove. Removing this line could break your site. Added by Security > Settings > Change Content Directory.', 'it-l10n-ithemes-security-pro' ) . "\n";
+		
+		$append_result = ITSEC_Lib_Config_File::append_wp_config( $modification, true );
+		
+		
+		if ( is_wp_error( $append_result ) ) {
+			$rename_result = rename( $dir, WP_CONTENT_DIR );
+			
+			if ( $rename_result ) {
+				ITSEC_Lib_Directory::chmod( WP_CONTENT_DIR, $old_permissions );
+				
+				$this->show_error( sprintf( __( 'Unable to update the <code>wp-config.php</code> file. No directory or config file changes have been made. %1$s (%2$s)', 'it-l10n-ithemes-security-pro' ), $append_result->get_error_message(), $append_result->get_error_code() ) );
+				
+				$this->show_error( sprintf( __( 'In order to change the content directory on your server, you will have to manually change the configuration and rename the directory. Details can be found <a href="%s">here</a>.', 'it-l10n-ithemes-security-pro' ), 'https://codex.wordpress.org/Editing_wp-config.php#Moving_wp-content_folder' ) );
+			} else {
+				$this->show_error( sprintf( __( 'CRITICAL ERROR: The <code>wp-content</code> directory was successfully renamed to the new name (<code>%1$s</code>). However, an error occurred when updating the <code>wp-config.php</code> file to configure WordPress to use the new content directory. iThemes Security attempted to rename the directory back to its original name, but an unknown error prevented the rename from working as expected. In order for your site to function properly, you will either need to rename the <code>%1$s</code> directory back to <code>wp-content</code> or manually update the <code>wp-config.php</code> file with the necessary modifications. Instructions for making this modification can be found <a href="%2$s">here</a>.', 'it-l10n-ithemes-security-pro' ), $dir_name, 'https://codex.wordpress.org/Editing_wp-config.php#Moving_wp-content_folder' ) );
+				
+				$this->show_error( sprintf( __( 'Details on the error that prevented the <code>wp-config.php</code> file from updating is as follows: %1$s (%2$s)', 'it-l10n-ithemes-security-pro' ), $append_result->get_error_message(), $append_result->get_error_code() ) );
+			}
+			
+			return;
 		}
 
-		$this->settings = true; //this tells the form field that all went well.
 
 		$backup = get_site_option( 'itsec_backup' );
 
 		if ( $backup !== false && isset( $backup['location'] ) ) {
 
-			$backup['location'] = str_replace( $old_directory, $new_directory, $backup['location'] );
+			$backup['location'] = str_replace( WP_CONTENT_DIR, $dir, $backup['location'] );
 			update_site_option( 'itsec_backup', $backup );
 
 		}
@@ -347,37 +323,39 @@ class ITSEC_Content_Directory_Admin {
 		if ( $global !== false && ( isset( $global['log_location'] ) || isset( $global['nginx_file'] ) ) ) {
 
 			if ( isset( $global['log_location'] ) ) {
-				$global['log_location'] = str_replace( $old_directory, $new_directory, $global['log_location'] );
+				$global['log_location'] = str_replace( WP_CONTENT_DIR, $dir, $global['log_location'] );
 			}
 
 			if ( isset( $global['nginx_file'] ) ) {
-				$global['nginx_file'] = str_replace( $old_directory, $new_directory, $global['nginx_file'] );
+				$global['nginx_file'] = str_replace( WP_CONTENT_DIR, $dir, $global['nginx_file'] );
 			}
 
 			update_site_option( 'itsec_global', $global );
 
 		}
 
+		$this->show_network_admin_notice();
+	}
+	
+	// TODO: Created from old code. Needs to be rebuilt.
+	protected function show_error( $message ) {
+		add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $message, 'error' );
+		
+		$this->last_error = $message;
+	}
+	
+	// TODO: Created from old code. Needs to be rebuilt.
+	protected function show_network_admin_notice() {
 		if ( is_multisite() ) {
-
-			if ( isset( $type ) ) {
-
-				$error_handler = new WP_Error();
-
-				$error_handler->add( $type, $message );
-
-				$this->core->show_network_admin_notice( $error_handler );
-
-			} else {
-
+			if ( empty( $this->last_error ) ) {
 				$this->core->show_network_admin_notice( false );
-
+			} else {
+				$error_handler = new WP_Error();
+				$error_handler->add( 'error', $this->last_error );
+				
+				$this->core->show_network_admin_notice( $error_handler );
 			}
-
-			$this->settings = true;
-
 		}
-
 	}
 
 	/**

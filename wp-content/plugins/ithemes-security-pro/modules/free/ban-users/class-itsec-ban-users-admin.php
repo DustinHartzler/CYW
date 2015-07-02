@@ -14,14 +14,10 @@ class ITSEC_Ban_Users_Admin {
 		$this->module_path = ITSEC_Lib::get_module_path( __FILE__ );
 
 		add_filter( 'itsec_file_modules', array( $this, 'register_file' ) ); //register tooltip action
-		add_action( 'itsec_add_admin_meta_boxes', array(
-			$this, 'add_admin_meta_boxes'
-		) ); //add meta boxes to admin page
+		add_action( 'itsec_add_admin_meta_boxes', array( $this, 'add_admin_meta_boxes' ) ); //add meta boxes to admin page
 		add_action( 'itsec_admin_init', array( $this, 'initialize_admin' ) ); //initialize admin area
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_script' ) ); //enqueue scripts for admin page
-		add_filter( 'itsec_add_dashboard_status', array(
-			$this, 'dashboard_status'
-		) ); //add information for plugin status
+		add_filter( 'itsec_add_dashboard_status', array( $this, 'dashboard_status' ) ); //add information for plugin status
 		add_filter( 'itsec_tracking_vars', array( $this, 'tracking_vars' ) );
 
 		//manually save options on multisite
@@ -29,6 +25,9 @@ class ITSEC_Ban_Users_Admin {
 			add_action( 'itsec_admin_init', array( $this, 'save_network_options' ) ); //save multisite options
 		}
 
+
+		add_filter( 'itsec_filter_apache_server_config_modification', array( $this, 'filter_apache_server_config_modification' ) );
+		add_filter( 'itsec_filter_nginx_server_config_modification', array( $this, 'filter_nginx_server_config_modification' ) );
 	}
 
 	/**
@@ -53,10 +52,10 @@ class ITSEC_Ban_Users_Admin {
 		);
 
 		$this->core->add_toc_item(
-		           array(
-			           'id'    => $id,
-			           'title' => $title,
-		           )
+			array(
+				'id'    => $id,
+				'title' => $title,
+			)
 		);
 
 	}
@@ -189,197 +188,196 @@ class ITSEC_Ban_Users_Admin {
 
 	}
 
-	/**
-	 * Build the rewrite rules and sends them to the file writer
-	 *
-	 * @param array   $input   array of options, ips, etc
-	 * @param boolean $current whether the current IP can be included in the ban list
-	 *
-	 * @return array array of rules to send to file writer
-	 */
-	public static function build_rewrite_rules( $input = null, $current = false ) {
-
-		//setup data structures to write. These are simply lists of all IPs and hosts as well as options to check
-		if ( $input === null ) { //blocking ip on the fly
-
-			$input = get_site_option( 'itsec_ban_users' );
-
+	public function filter_apache_server_config_modification( $modification ) {
+		$modification .= $this->get_server_config_default_blacklist_rules( 'apache' );
+		$modification .= $this->get_server_config_ban_hosts_rules( 'apache' );
+		$modification .= $this->get_server_config_ban_user_agents_rules( 'apache' );
+		
+		return $modification;
+	}
+	
+	public function filter_nginx_server_config_modification( $modification ) {
+		$modification .= $this->get_server_config_default_blacklist_rules( 'nginx' );
+		$modification .= $this->get_server_config_ban_hosts_rules( 'nginx' );
+		$modification .= $this->get_server_config_ban_user_agents_rules( 'nginx' );
+		
+		return $modification;
+	}
+	
+	protected function get_server_config_default_blacklist_rules( $server_type ) {
+		if ( true !== $this->settings['default'] ) {
+			return '';
 		}
-
-		$default        = $input['default'];
-		$enabled        = $input['enabled'];
-		$raw_host_list  = $input['host_list'];
-		$raw_agent_list = $input['agent_list'];
-
-		$server_type = ITSEC_Lib::get_server(); //Get the server type to build the right rules
-
-		//initialize lists so we can check later if we've used them
-		$host_list    = '';
-		$agent_list   = '';
-		$default_list = '';
-		$host_rule2   = '';
-
-		//load the default blacklist if needed
-		if ( $default === true && $server_type === 'nginx' ) {
-			$default_list = file_get_contents( plugin_dir_path( __FILE__ ) . 'lists/hackrepair-nginx.inc' );
-		} elseif ( $default === true ) {
-			$default_list = file_get_contents( plugin_dir_path( __FILE__ ) . 'lists/hackrepair-apache.inc' );
+		
+		
+		$rules = '';
+		
+		require_once( trailingslashit( $GLOBALS['itsec_globals']['plugin_dir'] ) . 'core/lib/class-itsec-lib-file.php' );
+		
+		$file = plugin_dir_path( __FILE__ ) . "lists/hackrepair-$server_type.inc";
+		
+		if ( ITSEC_Lib_File::is_file( $file ) ) {
+			$default_list = ITSEC_Lib_File::read( $file );
+			
+			if ( ! empty( $default_list ) ) {
+				$default_list = preg_replace( '/^/m', "\t", $default_list );
+				
+				$rules .= "\n";
+				$rules .= "\t# " . __( 'Enable HackRepair.com\'s blacklist feature - Security > Settings > Banned Users > Default Blacklist', 'it-l10n-ithemes-security-pro' ) . "\n";
+				$rules .= $default_list;
+			}
 		}
-
-		//Only process other lists if the feature has been enabled
-		if ( $enabled === true ) {
-
-			//process hosts list
-			if ( is_array( $raw_host_list ) ) {
-
-				foreach ( $raw_host_list as $host ) {
-
-					$host = ITSEC_Lib::ip_wild_to_mask( $host );
-
-					if ( ! class_exists( 'ITSEC_Ban_Users' ) ) {
-						require( dirname( __FILE__ ) . '/class-itsec-ban-users.php' );
-					}
-
-					if ( ! ITSEC_Ban_Users::is_ip_whitelisted( $host, null, $current ) ) {
-
-						$converted_host = ITSEC_Lib::ip_mask_to_range( $host );
-
-						if ( strlen( trim( $converted_host ) ) > 1 ) {
-
-							if ( $server_type === 'nginx' ) { //NGINX rules
-
-								$host_rule = "\tdeny " . trim( $host ) . ';';
-
-							} else { //rules for all other servers
-
-								$dhost     = str_replace( '.', '\\.', trim( $converted_host ) ); //re-define $dhost to match required output for SetEnvIf-RegEX
-								$host_rule = "SetEnvIF REMOTE_ADDR \"^" . $dhost . "$\" DenyAccess" . PHP_EOL; //Ban IP
-								$host_rule .= "SetEnvIF X-FORWARDED-FOR \"^" . $dhost . "$\" DenyAccess" . PHP_EOL; //Ban IP from Proxy-User
-								$host_rule .= "SetEnvIF X-CLUSTER-CLIENT-IP \"^" . $dhost . "$\" DenyAccess" . PHP_EOL; //Ban IP for Cluster/Cloud-hosted WP-Installs
-
-								$host_rule2 .= "deny from " . str_replace( '.[0-9]+', '', trim( $converted_host ) ) . PHP_EOL;
-
-							}
-
-						}
-
-						$host_list .= $host_rule . PHP_EOL; //build large string of all hosts
-
-					} else {
-
-						/**
-						 * @todo warn the user the ip to be banned is whitelisted
-						 */
-
-					}
-
+		
+		return $rules;
+	}
+	
+	protected function get_server_config_ban_hosts_rules( $server_type ) {
+		if ( true !== $this->settings['enabled']  ) {
+			return '';
+		}
+		if ( ! is_array( $this->settings['host_list'] ) || empty( $this->settings['host_list'] ) ) {
+			return '';
+		}
+		
+		
+		
+		if ( ! class_exists( 'ITSEC_Ban_Users' ) ) {
+			require( dirname( __FILE__ ) . '/class-itsec-ban-users.php' );
+		}
+		
+		
+		$host_rules = '';
+		$set_env_rules = '';
+		$deny_rules = '';
+		$require_rules = '';
+		
+		// process hosts list
+		foreach ( $this->settings['host_list'] as $host ) {
+			$host = ITSEC_Lib::ip_wild_to_mask( $host );
+			$host = trim( $host );
+			
+			if ( empty( $host ) ) {
+				continue;
+			}
+			
+			if ( ITSEC_Ban_Users::is_ip_whitelisted( $host ) ) {
+				/**
+				 * @todo warn the user the ip to be banned is whitelisted
+				 */
+				continue;
+			}
+			
+			
+			if ( 'apache' === $server_type ) {
+				$converted_host = ITSEC_Lib::ip_mask_to_range( $host );
+				$converted_host = trim( $converted_host );
+				
+				if ( empty( $converted_host ) ) {
+					continue;
 				}
-
+				
+				
+				$set_env_host = str_replace( '.', '\\.', $converted_host );
+				
+				$set_env_rules .= "SetEnvIF REMOTE_ADDR \"^$set_env_host$\" DenyAccess\n"; // Ban IP
+				$set_env_rules .= "SetEnvIF X-FORWARDED-FOR \"^$set_env_host$\" DenyAccess\n"; // Ban IP from a proxy
+				$set_env_rules .= "SetEnvIF X-CLUSTER-CLIENT-IP \"^$set_env_host$\" DenyAccess\n"; // Ban IP from a load balancer
+				$set_env_rules .= "\n";
+				
+				
+				$require_host = str_replace( '.[0-9]+', '', $converted_host );
+				
+				$require_rules .= "\t\tRequire not ip $require_host\n";
+				$deny_rules .= "\tDeny from $require_host\n";
+			} else if ( 'nginx' === $server_type ) {
+				$host_rules .= "\tdeny $host;\n";
 			}
-
-			//Process the agents list
-			if ( is_array( $raw_agent_list ) ) {
-
-				$count = 1; //to help us find the last one
-
-				foreach ( $raw_agent_list as $agent ) {
-
-					if ( strlen( trim( $agent ) ) > 1 ) {
-
-						//if it isn't the last rule make sure we add an or
-						if ( $count < sizeof( $agent ) ) {
-							$end = ' [NC,OR]' . PHP_EOL;
-						} else {
-							$end = ' [NC]' . PHP_EOL;
-						}
-
-						if ( strlen( trim( $agent ) ) > 1 ) {
-
-							if ( $server_type === 'nginx' ) { //NGINX rule
-								$converted_agent = 'if ($http_user_agent ~* "^' . quotemeta( trim( $agent ) ) . '"){ return 403; }' . PHP_EOL;
-							} else { //Rule for all other servers
-								$converted_agent = 'RewriteCond %{HTTP_USER_AGENT} ^' . str_replace( ' ', '\ ', quotemeta( trim( $agent ) ) ) . $end;
-							}
-
-						}
-
-						$agent_list .= $converted_agent; //build large string of all agents
-
-					}
-
-					$count ++;
-
-				}
-
-			}
-
 		}
-
-		$rules = ''; //initialize rules
-
-		//Start with default rules if we have them
-		if ( strlen( $default_list ) > 1 ) {
-
-			$rules .= $default_list;
-
-		}
-
-		//Add banned host lists
-		if ( strlen( $host_list ) > 1 || strlen( $default_list ) ) {
-
-			if ( strlen( $default_list ) > 1 ) {
-				$rules .= PHP_EOL;
+		
+		
+		$rules = '';
+		
+		if ( 'apache' === $server_type ) {
+			if ( ! empty( $set_env_rules ) ) {
+				$rules .= "\n";
+				$rules .= "# " . __( 'Ban Hosts - Security > Settings > Banned Users', 'it-l10n-ithemes-security-pro' ) . "\n";
+				$rules .= $set_env_rules;
+				$rules .= "<IfModule mod_authz_core.c>\n";
+				$rules .= "\t<RequireAll>\n";
+				$rules .= "\t\tRequire all granted\n";
+				$rules .= "\t\tRequire not env DenyAccess\n";
+				$rules .= $require_rules;
+				$rules .= "\t</RequireAll>\n";
+				$rules .= "</IfModule>\n";
+				$rules .= "<IfModule !mod_authz_core.c>\n";
+				$rules .= "\tOrder allow,deny\n";
+				$rules .= "\tAllow from all\n";
+				$rules .= "\tDeny from env=DenyAccess\n";
+				$rules .= $deny_rules;
+				$rules .= "</IfModule>\n";
 			}
-
-			if ( $server_type === 'nginx' && strlen( $host_list ) > 1 ) { //NGINX rules
-
-				$rules .= $host_list;
-
-			} elseif ( strlen( $host_list ) > 1 ) {
-
-				$rules .=
-					$host_list .
-					'order allow,deny' . PHP_EOL .
-					'deny from env=DenyAccess' . PHP_EOL .
-					$host_rule2 .
-					'allow from all' . PHP_EOL;
-
+		} else if ( 'nginx' === $server_type ) {
+			if ( ! empty( $host_rules ) ) {
+				$rules .= "\n";
+				$rules .= "# " . __( 'Ban Hosts - Security > Settings > Banned Users', 'it-l10n-ithemes-security-pro' ) . "\n";
+				$rules .= $host_rules;
 			}
-
 		}
-
-		//Add banned user agents
-		if ( strlen( $agent_list ) > 1 ) {
-
-			if ( strlen( $default_list ) > 1 || strlen( $host_list ) > 1 ) {
-				$rules .= PHP_EOL;
+		
+		return $rules;
+	}
+	
+	protected function get_server_config_ban_user_agents_rules( $server_type ) {
+		if ( true !== $this->settings['enabled']  ) {
+			return '';
+		}
+		if ( ! is_array( $this->settings['agent_list'] ) || empty( $this->settings['agent_list'] ) ) {
+			return '';
+		}
+		
+		
+		$agent_rules = '';
+		$rewrite_rules = '';
+		
+		foreach ( $this->settings['agent_list'] as $index => $agent ) {
+			$agent = trim( $agent );
+			
+			if ( empty( $agent ) ) {
+				continue;
 			}
-
-			if ( $server_type === 'nginx' ) { //NGINX rules
-
-				$rules .= $agent_list;
-
-			} else {
-
-				$rules .= '<IfModule mod_rewrite.c>' . PHP_EOL;
-				$rules .= 'RewriteEngine On' . PHP_EOL;
-				$rules .= $agent_list;
-				$rules .= 'RewriteRule ^(.*)$ - [F]' . PHP_EOL;
-				$rules .= '</IfModule>' . PHP_EOL;
-
+			
+			
+			$agent = preg_quote( $agent );
+			
+			if ( 'apache' === $server_type ) {
+				$agent = str_replace( ' ', '\\ ', $agent );
+				$rewrite_rules .= "\t\tRewriteCond %{HTTP_USER_AGENT} ^$agent [NC,OR]\n";
+			} else if ( 'nginx' === $server_type ) {
+				$agent = str_replace( '"', '\\"', $agent );
+				$agent_rules .= "if (\$http_user_agent ~* \"^$agent\") { return 403; }\n";
 			}
-
 		}
-
-		if ( strlen( $rules ) > 0 ) {
-			$rules = explode( PHP_EOL, $rules );
-		} else {
-			$rules = false;
+		
+		if ( ( 'apache' === $server_type ) && ! empty( $rewrite_rules ) ) {
+			$rewrite_rules = preg_replace( "/\[NC,OR\]\n$/", "[NC]\n", $rewrite_rules );
+			
+			$agent_rules .= "\t<IfModule mod_rewrite.c>\n";
+			$agent_rules .= "\t\tRewriteEngine On\n";
+			$agent_rules .= $rewrite_rules;
+			$agent_rules .= "\t\tRewriteRule . - [F]\n";
+			$agent_rules .= "\t</IfModule>\n";
 		}
-
-		//create a proper array for writing
-		return array( 'type' => 'htaccess', 'priority' => 1, 'name' => 'Ban Users', 'rules' => $rules, );
-
+		
+		
+		$rules = '';
+		
+		if ( ! empty( $agent_rules ) ) {
+			$rules .= "\n";
+			$rules .= "\t# " . __( 'Ban User Agents - Security > Settings > Banned Users', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$rules .= $agent_rules;
+		}
+		
+		return $rules;
 	}
 
 	/**
@@ -731,33 +729,6 @@ class ITSEC_Ban_Users_Admin {
 	}
 
 	/**
-	 * Saves rewrite rules to file writer.
-	 *
-	 * @since 4.0.6
-	 *
-	 * @return void
-	 */
-	public function save_rewrite_rules() {
-
-		global $itsec_files;
-
-		$rewrite_rules = $itsec_files->get_rewrite_rules();
-
-		foreach ( $rewrite_rules as $key => $rule ) {
-
-			if ( isset( $rule['name'] ) && $rule['name'] == 'Ban Users' ) {
-				unset ( $rewrite_rules[$key] );
-			}
-
-		}
-
-		$rewrite_rules[] = $this->build_rewrite_rules();
-
-		$itsec_files->set_rewrite_rules( $rewrite_rules );
-
-	}
-
-	/**
 	 * Adds fields that will be tracked for Google Analytics
 	 *
 	 * @since 4.0
@@ -776,5 +747,4 @@ class ITSEC_Ban_Users_Admin {
 		return $vars;
 
 	}
-
 }

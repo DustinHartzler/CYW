@@ -1,4 +1,3 @@
-
 1.0.0 - 2014-03-25 - Chris Wiegman
 	Initial Release
 1.0.1 - 2014-03-25 - Packaging Bot (modules/free)
@@ -466,3 +465,51 @@
 	Bug Fix: When a file scan is run from iThemes Sync, a warning will no longer be added to the site's error log.
 1.14.14 - 2015-02-26 - Packaging Bot (core)
 	Bug Fix: Fixed regression that prevented adding wildcard IP's in the form of 'XXX.XXX.XXX.*' to Ban Hosts.
+1.14.15 - 2015-03-20 - Packaging Bot (core)
+	Enhancement: Translation files can now be stored in WP_LANG_DIR/plugins/ithemes-security-pro for
+		iThemes Security Pro and WP_LANG_DIR/plugins/better-wp-security for iThemes Security free version.
+	Bug Fix: The file permissions check will no longer list a warning if the plugins directory has permissions of 755.
+1.14.16 - 2015-03-20 - Packaging Bot (modules/free)
+	Bug Fix: Fixed incorrect text describing the "Backups to Retain" database backup setting.
+1.14.17 - 2015-03-20 - Packaging Bot (modules/pro)
+	Enhancement: Settings import now allows for renamed export files.
+	Enhancement: Settings import now provides better error messages.
+	Bug Fix: Settings import no longer respects MIME types sent by the browser. This avoids issues with some
+		browsers/operating systems reporting the MIME type of the uploaded file incorrectly.
+1.14.18 - 2015-04-14 - Chris Jean (modules/free)
+	Bug Fix: Security fix for XSS vulnerability. Thanks to Ole Aass (@oleaass) for finding and disclosing this vulnerability to the iThemes Security team.
+1.14.19 - 2015-04-15 - Chris Jean
+	Bug Fix: Fixed issue that may prevent some sites from seeing the available update.
+1.14.20 - 2015-04-23 - Packaging Bot (lib/updater)
+	Compatibility Fix: Updated plugin and theme update data format to match changes in WordPress 4.2.
+1.15.0 - 2015-06-04 - Chris Jean
+	Bug Fix: Added support for Apache 2.4 without the access_compat module.
+	Bug Fix: Fixed condition where forcing SSL on front-end pages could cause infinite redirection loops with specific setups of nginx to Apache reverse proxy servers.
+	Bug Fix: Fixed scenarios where the site would be forced to load via https but scripts, stylesheets, and images would load via http.
+	Bug Fix: Fixed invalid nginx.conf rule generation for the Reduce Comment Spam feature.
+	Bug Fix: Corrected invalid parsing of some IP formats in Ban Hosts list.
+	Bug Fix: Improved error handling when reading or updating config files.
+	Bug Fix: Fixed various warnings that would display when changing settings.
+	Enhancement: Updated to use new file modification API.
+	Enhancement: Added HackRepair.com blacklist for Nginx.
+	Enhancement: Improved Nginx support for System Tweak features.
+	Enhancement: Updates to wp-config.php, .htaccess, and nginx.conf files now support more systems.
+	Enhancement: Combined the "Force SSL for Dashboard" and "Force SSL for Login" settings to a unified "Force SSL for Dashboard" setting. This is due to how the FORCE_SSL_LOGIN define was deprecated in WP 4.0.0.
+	Enhancement: Added comments to wp-config.php, .htaccess, and nginx.conf updates that indicate which settings affect the specific entries.
+	Enhancement: Added translation support for previously static strings, including strings used for comments in wp-config.php, .htaccess, and nginx.conf files.
+	Enhancement: Improved generation of valid referers for use by the Reduce Comment Spam feature.
+	Enhancement: Broadened the server support in the import settings code.
+	Enhancement: Added new library classes for managing files, directories, and config files.
+1.15.1 - 2015-06-04 - Chris Jean
+	Bug Fix: Fixed bad release that had some outdated files.
+1.15.2 - 2015-06-08 - Packaging Bot (core)
+	Bug Fix: Fixed "Fatal error: Call to undefined method ITSEC_Lib_File::get_full_file_permissions()" which could occur when saving settings.
+1.15.3 - 2015-06-09 - Chris Jean
+	Bug Fix: Warnings when file writes fail are now hidden.
+	Bug Fix: Fixed a situation where creation of a zipped export file would fail, but an email would still be sent as if the zip was created successfully.
+	Enhancement: Improved error messages for when file writes fail.
+	Enhancement: Improved error messages for when export file creation fails.
+	Enhancement: Improved error messages for situations when the .htaccess, nginx.conf, or wp-config.php files may need to be manually updated.
+	Enhancement: Fixed tabbing for "Ban User Agents" section in .htaccess files to match tabbing used by other sections.
+1.15.4 - 2015-06-16 - Chris Jean
+	Bug Fix: Fixed handling of wp-config.php files that are one directory up from the ABSPATH directory.

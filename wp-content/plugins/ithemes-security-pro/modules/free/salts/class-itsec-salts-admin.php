@@ -91,91 +91,6 @@ class ITSEC_Salts_Admin {
 	}
 
 	/**
-	 * Generate Salts
-	 *
-	 * Generates a random string using alpha-numeric and special characters with a length of 64 characters.
-	 *
-	 * @since  4.6.0
-	 *
-	 * @access private
-	 *
-	 * @return void
-	 */
-	private function generate_salts() {
-
-		$salts = '';
-
-		for ( $i = 0; 1 > $i; $i ++ ) {
-
-			$salts .= ITSEC_Lib::get_random( 64, false, true ) . ' ';
-
-		}
-
-		return $salts;
-	}
-
-	/**
-	 * Build wp-config.php rules
-	 *
-	 * Sets the array of wp-config.php rules that will either need to be replaced later.
-	 *
-	 * @since  4.6.0
-	 *
-	 * @access private
-	 *
-	 * @param  array $salts options to build rules from
-	 *
-	 * @return array         rules to write
-	 */
-	private function build_salts_rules() {
-
-		$rules_array = array();
-
-		$rules[] = array(
-			'type' => 'replace', 'search_text' => 'AUTH_KEY',
-			'rule' => "define('AUTH_KEY', '" . $this->generate_salts() . "');",
-		);
-
-		$rules[] = array(
-			'type' => 'replace', 'search_text' => 'SECURE_AUTH_KEY',
-			'rule' => "define('SECURE_AUTH_KEY', '" . $this->generate_salts() . "');",
-		);
-		$rules[] = array(
-			'type' => 'replace', 'search_text' => 'LOGGED_IN_KEY',
-			'rule' => "define('LOGGED_IN_KEY', '" . $this->generate_salts() . "');",
-		);
-
-		$rules[] = array(
-			'type' => 'replace', 'search_text' => 'NONCE_KEY',
-			'rule' => "define('NONCE_KEY', '" . $this->generate_salts() . "');",
-		);
-
-		$rules[] = array(
-			'type' => 'replace', 'search_text' => 'AUTH_SALT',
-			'rule' => "define('AUTH_SALT', '" . $this->generate_salts() . "');",
-		);
-
-		$rules[] = array(
-			'type' => 'replace', 'search_text' => 'SECURE_AUTH_SALT',
-			'rule' => "define('SECURE_AUTH_SALT', '" . $this->generate_salts() . "');",
-		);
-
-		$rules[] = array(
-			'type' => 'replace', 'search_text' => 'LOGGED_IN_SALT',
-			'rule' => "define('LOGGED_IN_SALT', '" . $this->generate_salts() . "');",
-		);
-
-		$rules[] = array(
-			'type' => 'replace', 'search_text' => 'NONCE_SALT',
-			'rule' => "define('NONCE_SALT', '" . $this->generate_salts() . "');",
-		);
-
-		$rules_array[] = array( 'type' => 'wpconfig', 'name' => 'Content Directory', 'rules' => $rules, );
-
-		return $rules_array;
-	}
-
-	/**
 	 * Add meta boxes to primary options pages
 	 *
 	 * Adds the module's meta settings box to the advanced page.
@@ -329,9 +244,7 @@ class ITSEC_Salts_Admin {
 							<label for="itsec_enable_salts"><?php _e( 'Change WordPress Salts', 'it-l10n-ithemes-security-pro' ); ?></label>
 						</th>
 						<td class="settingfield">
-							<?php //username field ?>
 							<input type="checkbox" id="itsec_enable_salts" name="itsec_enable_salts" value="true"/>
-
 							<p class="description"><?php _e( 'Check this box to change your WordPress Salts.', 'it-l10n-ithemes-security-pro' ); ?></p>
 						</td>
 					</tr>
@@ -359,59 +272,86 @@ class ITSEC_Salts_Admin {
 	}
 
 	/**
+	 * Get a random salt value
+	 *
+	 * @since  1.15.0
+	 *
+	 * @access protected
+	 *
+	 * @return string The generated salt.
+	 */
+	protected function get_salt() {
+		$characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()-_=+[]{}|;:<>,./? ';
+		$salt = '';
+		
+		for ( $count = 0; $count < 64; $count++ ) {
+			$character_index = rand( 0, strlen( $characters ) - 1 );
+			$salt .= $characters[$character_index];
+		}
+		
+		return $salt;
+	}
+
+	/**
 	 * Sanitize and validate input
 	 *
 	 * @since 4.6.0
 	 */
 	public function process_salts() {
-
-		global $itsec_files, $itsec_globals;
-
-		//suppress error messages due to timing
-		error_reporting( 0 );
-		@ini_set( 'display_errors', 0 );
-
-		$rules = $this->build_salts_rules();
-
-		$itsec_files->set_wpconfig( $rules );
-
-		$configs = $itsec_files->save_wpconfig();
-
-		if ( is_array( $configs ) ) {
-
-			if ( $configs['success'] === false ) {
-
-				$type    = 'error';
-				$message = $configs['text'];
-
-				add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $message, $type );
-
-			}
-
-			if ( ! $configs ) {
-
-				$type    = 'error';
-				$message = __( 'Unable change the WordPress Salts. Operation cancelled.', 'it-l10n-ithemes-security-pro' );
-
-				add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $message, $type );
-
-			}
-
+		global $itsec_globals;
+		
+		
+		require_once( trailingslashit( $GLOBALS['itsec_globals']['plugin_dir'] ) . 'core/lib/class-itsec-lib-config-file.php' );
+		require_once( trailingslashit( $GLOBALS['itsec_globals']['plugin_dir'] ) . 'core/lib/class-itsec-lib-file.php' );
+		
+		$config_file_path = ITSEC_Lib_Config_File::get_wp_config_file_path();
+		$config = ITSEC_Lib_File::read( $config_file_path );
+		$error = '';
+		
+		if ( is_wp_error( $config ) ) {
+			$error = sprintf( __( 'Unable to read the <code>wp-config.php</code> file in order to update the salts. Error details as follows: %1$s (%2$s)', 'it-l10n-ithemes-security-pro' ), $config->get_error_message(), $config->get_error_code() );
 		} else {
-
-			add_site_option( 'itsec_manual_update', true );
-
+			$defines = array(
+				'AUTH_KEY',
+				'SECURE_AUTH_KEY',
+				'LOGGED_IN_KEY',
+				'NONCE_KEY',
+				'AUTH_SALT',
+				'SECURE_AUTH_SALT',
+				'LOGGED_IN_SALT',
+				'NONCE_SALT',
+			);
+			
+			foreach ( $defines as $define ) {
+				$new_salt = $this->get_salt();
+				$new_salt = str_replace( '$', '\\$', $new_salt );
+				
+				$regex = "/(define\s*\(\s*(['\"])$define\\2\s*,\s*)(['\"]).+?\\3(\s*\)\s*;)/";
+				$config = preg_replace( $regex, "\${1}'$new_salt'\${4}", $config );
+			}
+			
+			$write_result = ITSEC_Lib_File::write( $config_file_path, $config );
+			
+			if ( is_wp_error( $write_result ) ) {
+				$error = sprintf( __( 'Unable to update the <code>wp-config.php</code> file in order to update the salts. Error details as follows: %1$s (%2$s)', 'it-l10n-ithemes-security-pro' ), $config->get_error_message(), $config->get_error_code() );
+			}
 		}
+		
+		if ( ! empty( $error ) ) {
+			add_settings_error( 'itsec', esc_attr( 'settings_updated' ), $error, 'error' );
+			add_site_option( 'itsec_manual_update', true );
+		}
+
 
 		$this->settings = true; //this tells the form field that all went well.
 
 		if ( is_multisite() ) {
 
-			if ( isset( $type ) ) {
+			if ( ! empty( $error ) ) {
 
 				$error_handler = new WP_Error();
 
-				$error_handler->add( $type, $message );
+				$error_handler->add( 'error', $error );
 
 				$this->core->show_network_admin_notice( $error_handler );
 

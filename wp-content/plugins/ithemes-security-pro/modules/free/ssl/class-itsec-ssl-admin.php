@@ -34,6 +34,8 @@ class ITSEC_SSL_Admin {
 
 		}
 
+
+		add_filter( 'itsec_filter_wp_config_modification', array( $this, 'filter_wp_config_modification' ) );
 	}
 
 	/**
@@ -149,37 +151,23 @@ class ITSEC_SSL_Admin {
 	 * @return array statuses
 	 */
 	public function dashboard_status( $statuses ) {
-
-		if ( defined( 'FORCE_SSL_LOGIN' ) && FORCE_SSL_LOGIN === true && defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN === true ) {
-
+		if ( ( defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN ) || ( defined( 'FORCE_SSL_LOGIN' ) && FORCE_SSL_LOGIN ) ) {
 			$status_array = 'safe-low';
 			$status       = array(
-				'text' => __( 'You are requiring a secure connection for logins and the admin area.', 'it-l10n-ithemes-security-pro' ),
-				'link' => '#itsec_ssl_login',
+				'text' => __( 'You are requiring a secure connection for accessing the dashboard.', 'it-l10n-ithemes-security-pro' ),
+				'link' => '#itsec_ssl_admin',
 			);
-
-		} elseif ( ( defined( 'FORCE_SSL_LOGIN' ) && FORCE_SSL_LOGIN === true ) || ( defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN === true ) ) {
-
-			$status_array = 'low';
-			$status       = array(
-				'text' => __( 'You are requiring a secure connection for logins or the admin area but not both.', 'it-l10n-ithemes-security-pro' ),
-				'link' => '#itsec_ssl_login',
-			);
-
 		} else {
-
 			$status_array = 'low';
 			$status       = array(
-				'text' => __( 'You are not requiring a secure connection for logins or for the admin area.', 'it-l10n-ithemes-security-pro' ),
-				'link' => '#itsec_ssl_login',
+				'text' => __( 'You are not requiring a secure connection for accessing the dashboard.', 'it-l10n-ithemes-security-pro' ),
+				'link' => '#itsec_ssl_admin',
 			);
-
 		}
-
+		
 		array_push( $statuses[$status_array], $status );
-
+		
 		return $statuses;
-
 	}
 
 	/**
@@ -212,15 +200,6 @@ class ITSEC_SSL_Admin {
 
 		//enabled field
 		add_settings_field(
-			'itsec_ssl[login]',
-			__( 'SSL for Login', 'it-l10n-ithemes-security-pro' ),
-			array( $this, 'ssl_login' ),
-			'security_page_toplevel_page_itsec_settings',
-			'ssl_settings'
-		);
-
-		//enabled field
-		add_settings_field(
 			'itsec_ssl[admin]',
 			__( 'SSL for Dashboard', 'it-l10n-ithemes-security-pro' ),
 			array( $this, 'ssl_admin' ),
@@ -245,45 +224,20 @@ class ITSEC_SSL_Admin {
 	 * @return void
 	 */
 	public function ssl_frontend() {
-
 		if ( isset( $this->settings['frontend'] ) ) {
 			$frontend = $this->settings['frontend'];
 		} else {
 			$frontend = 0;
 		}
-
+		
 		echo '<select id="itsec_ssl_frontend" name="itsec_ssl[frontend]">';
-
-		echo '<option value="0" ' . selected( $frontend, '0' ) . '>' . __( 'Off', 'it-l10n-ithemes-security-pro' ) . '</option>';
-		echo '<option value="1" ' . selected( $frontend, '1' ) . '>' . __( 'Per Content', 'it-l10n-ithemes-security-pro' ) . '</option>';
-		echo '<option value="2" ' . selected( $frontend, '2' ) . '>' . __( 'Whole Site', 'it-l10n-ithemes-security-pro' ) . '</option>';
+		
+		echo '<option value="0" ' . selected( $frontend, '0', false ) . '>' . __( 'Off', 'it-l10n-ithemes-security-pro' ) . '</option>';
+		echo '<option value="1" ' . selected( $frontend, '1', false ) . '>' . __( 'Per Content', 'it-l10n-ithemes-security-pro' ) . '</option>';
+		echo '<option value="2" ' . selected( $frontend, '2', false ) . '>' . __( 'Whole Site', 'it-l10n-ithemes-security-pro' ) . '</option>';
 		echo '</select><br />';
 		echo '<label for="itsec_ssl_frontend"> ' . __( 'Front End SSL Mode', 'it-l10n-ithemes-security-pro' ) . '</label>';
-		echo '<p class="description">' . __( 'Enables secure SSL connection for the front-end (public parts of your site). Turning this off will disable front-end SSL control, turning this on "Per Content" will place a checkbox on the edit page for all posts and pages (near the publish settings) allowing you to turn on SSL for selected pages or posts, and selecting "Whole Site" will force the whole site to use SSL (not recommended unless you have a really good reason to use it' ) . '</p>';
-
-	}
-
-	/**
-	 * echos login Field
-	 *
-	 * @since 4.0
-	 *
-	 * @return void
-	 */
-	public function ssl_login() {
-
-		if ( isset( $this->settings['login'] ) && $this->settings['login'] === true ) {
-			$login = 1;
-		} else {
-			$login = 0;
-		}
-
-		$content = '<input onchange="forcessl()" type="checkbox" id="itsec_ssl_login" name="itsec_ssl[login]" value="1" ' . checked( 1, $login, false ) . '/>';
-		$content .= '<label for="itsec_ssl_login">' . __( 'Force SSL for Login', 'it-l10n-ithemes-security-pro' ) . '</label>';
-		$content .= '<p class="description">' . __( 'Forces all logins to be served only over a secure SSL connection.', 'it-l10n-ithemes-security-pro' ) . '</p>';
-
-		echo $content;
-
+		echo '<p class="description">' . __( 'Enables secure SSL connection for the front-end (public parts of your site). Turning this off will disable front-end SSL control, turning this on "Per Content" will place a checkbox on the edit page for all posts and pages (near the publish settings) allowing you to turn on SSL for selected pages or posts, and selecting "Whole Site" will force the whole site to use SSL (not recommended unless you have a really good reason to use it', 'it-l10n-ithemes-security-pro' ) . '</p>';
 	}
 
 	/**
@@ -295,7 +249,7 @@ class ITSEC_SSL_Admin {
 	 */
 	public function ssl_admin() {
 
-		if ( isset( $this->settings['admin'] ) && $this->settings['admin'] === true ) {
+		if ( ( isset( $this->settings['admin'] ) && ( true === $this->settings['admin'] ) ) || ( isset( $this->settings['login'] ) && ( true === $this->settings['login'] ) ) ) {
 			$admin = 1;
 		} else {
 			$admin = 0;
@@ -303,7 +257,7 @@ class ITSEC_SSL_Admin {
 
 		$content = '<input onchange="forcessl()" type="checkbox" id="itsec_ssl_admin" name="itsec_ssl[admin]" value="1" ' . checked( 1, $admin, false ) . '/>';
 		$content .= '<label for="itsec_ssl_admin">' . __( 'Force SSL for Dashboard', 'it-l10n-ithemes-security-pro' ) . '</label>';
-		$content .= '<p class="description">' . __( 'Forces all logins to be served only over a secure SSL connection.', 'it-l10n-ithemes-security-pro' ) . '</p>';
+		$content .= '<p class="description">' . __( 'Forces all dashboard access to be served only over an SSL connection.', 'it-l10n-ithemes-security-pro' ) . '</p>';
 
 		echo $content;
 
@@ -346,124 +300,20 @@ class ITSEC_SSL_Admin {
 
 	}
 
-	/**
-	 * Build wp-config.php rules
-	 *
-	 * @since 4.0
-	 *
-	 * @param  array $input        options to build rules from
-	 * @param bool   $deactivation whether or not we're deactivating
-	 *
-	 * @return array         rules to write
-	 */
-	public static function build_wpconfig_rules( $input = null, $deactivation = false ) {
-
-		//Return options to default on deactivation
-		if ( $deactivation === true || ( isset( $_GET['action'] ) && $_GET['action'] == 'deactivate' ) ) {
-
-			$input        = array();
-			$deactivating = true;
-			$initials     = get_site_option( 'itsec_initials' );
-
-			if ( isset( $initials['login'] ) && $initials['login'] === false && defined( 'FORCE_SSL_LOGIN' ) && FORCE_SSL_LOGIN === true ) { //initially off, now on
-
-				$input['login'] = false;
-
-			} elseif ( isset( $initials['login'] ) && $initials['login'] === true && ( ! defined( 'FORCE_SSL_LOGIN' ) || FORCE_SSL_LOGIN === false ) ) { //initially on, now off
-
-				$input['login'] = true;
-
-			} elseif ( defined( 'FORCE_SSL_LOGIN' ) && FORCE_SSL_LOGIN === true ) { //no initial state, now on
-
-				$input['login'] = true;
-
-			} else { //no initial state or other info. Set off
-
-				$input['login'] = false;
-
-			}
-
-			if ( isset( $initials['admin'] ) && $initials['admin'] === false && defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN === true ) { //initially off, now on
-
-				$input['admin'] = false;
-
-			} elseif ( isset( $initials['admin'] ) && $initials['admin'] === true && ( ! defined( 'FORCE_SSL_ADMIN' ) || FORCE_SSL_ADMIN === false ) ) { //initially on, now off
-
-				$input['admin'] = true;
-
-			} elseif ( defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN === true ) { //no initial state, now on
-
-				$input['admin'] = true;
-
-			} else { //no initial state or other info. Set off
-
-				$input['admin'] = false;
-
-			}
-
-		} else {
-
-			$deactivating = false;
-
-			//Get the rules from the database if input wasn't sent
-			if ( $input === null ) {
-				$input = get_site_option( 'itsec_ssl' );
-			}
-
+	public function filter_wp_config_modification( $modification ) {
+		$input = get_site_option( 'itsec_ssl', false );
+		
+		if ( ! is_array( $input ) ) {
+			return $modification;
 		}
-
-		if ( $input['login'] == true ) {
-
-			$rules[] = array(
-				'type' => 'add', 'search_text' => 'FORCE_SSL_LOGIN', 'rule' => "define( 'FORCE_SSL_LOGIN', true );",
-			);
-
-			$has_login = true;
-
-		} else {
-
-			$rules[] = array( 'type' => 'delete', 'search_text' => 'FORCE_SSL_LOGIN', 'rule' => false, );
-
-			$has_login = false;
-
+		
+		
+		if ( ( isset( $input['login'] ) && ( true == $input['login'] ) ) || ( isset( $input['admin'] ) && ( true == $input['admin'] ) ) ) {
+			$modification .= "define( 'FORCE_SSL_LOGIN', true ); // " . __( 'Force SSL for Dashboard - Security > Settings > Secure Socket Layers (SSL) > SSL for Dashboard', 'it-l10n-ithemes-security-pro' ) . "\n";
+			$modification .= "define( 'FORCE_SSL_ADMIN', true ); // " . __( 'Force SSL for Dashboard - Security > Settings > Secure Socket Layers (SSL) > SSL for Dashboard', 'it-l10n-ithemes-security-pro' ) . "\n";
 		}
-
-		if ( $input['admin'] == true ) {
-
-			$rules[] = array(
-				'type' => 'add', 'search_text' => 'FORCE_SSL_ADMIN', 'rule' => "define( 'FORCE_SSL_ADMIN', true );",
-			);
-
-			$has_admin = true;
-
-		} else {
-
-			$rules[] = array( 'type' => 'delete', 'search_text' => 'FORCE_SSL_ADMIN', 'rule' => false, );
-
-			$has_admin = false;
-
-		}
-
-		if ( ( $has_login === false && $has_admin == false ) || $deactivating === true ) {
-
-			$comment = array(
-				'type'        => 'delete',
-				'search_text' => '//The entries below were created by iThemes Security to enforce SSL', 'rule' => false,
-			);
-
-		} else {
-
-			$comment = array(
-				'type' => 'add', 'search_text' => '//The entries below were created by iThemes Security to enforce SSL',
-				'rule' => '//The entries below were created by iThemes Security to enforce SSL',
-			);
-
-		}
-
-		array_unshift( $rules, $comment );
-
-		return array( 'type' => 'wpconfig', 'name' => 'SSL', 'rules' => $rules, );
-
+		
+		return $modification;
 	}
 
 	/**
@@ -510,10 +360,9 @@ class ITSEC_SSL_Admin {
 	public function sanitize_module_input( $input ) {
 
 		$input['frontend'] = isset( $input['frontend'] ) ? intval( $input['frontend'] ) : 0;
-		$input['login']    = ( isset( $input['login'] ) && intval( $input['login'] == 1 ) ? true : false );
 		$input['admin']    = ( isset( $input['admin'] ) && intval( $input['admin'] == 1 ) ? true : false );
 
-		if ( $input['login'] !== $this->settings['login'] || $input['admin'] !== $this->settings['admin'] ) {
+		if ( $input['admin'] !== $this->settings['admin'] ) {
 
 			add_site_option( 'itsec_config_changed', true );
 
@@ -530,33 +379,6 @@ class ITSEC_SSL_Admin {
 		}
 
 		return $input;
-
-	}
-
-	/**
-	 * Saves rewrite rules to file writer.
-	 *
-	 * @since 4.0.6
-	 *
-	 * @return void
-	 */
-	public function save_config_rules() {
-
-		global $itsec_files;
-
-		$config_rules = $itsec_files->get_config_rules();
-
-		foreach ( $config_rules as $key => $rule ) {
-
-			if ( isset( $rule['name'] ) && $rule['name'] == 'SSL' ) {
-				unset ( $config_rules[$key] );
-			}
-
-		}
-
-		$config_rules[] = $this->build_wpconfig_rules();
-
-		$itsec_files->set_config_rules( $config_rules );
 
 	}
 
