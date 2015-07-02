@@ -1,0 +1,23 @@
+*** WooCommerce Memberships Changelog ***
+
+2015.06.29 - version 1.0.3
+ * Fix - Memberships tabs no longer try to sneak into other screens :)
+ * Fix - Discount inputs no longer force a whole-dollar amount and respect .01 increments
+ * Fix - Products are now properly restricted to logged-in non-members
+ * Fix - Correctly display Membership meta box on Add Product/Post page
+ * Fix - Fix compatibility issue with Order Status Manager emails
+
+2015.06.19 - version 1.0.2
+ * Fix - Avoid a warning when saving a membership plan and not granting access to any products
+ * Fix - Fix disappearing "no rules" message
+ * Fix - Gracefully handle deleted orders/subscriptions
+ * Fix - Fix issues with plan duplication
+ * Tweak - Load admin scripts on Memberships screens only
+
+2015.06.17 - version 1.0.1
+ * Fix - Fixed intermittent issue with new membership plans not saving correctly
+ * Tweak - Refunding or trashing an order in which a membership was purchased will now cancel the associated membership
+ * Tweak - Improved admin messaging around plan creation and membership settings
+
+2015.06.05 - version 1.0.0
+ * Initial Release
