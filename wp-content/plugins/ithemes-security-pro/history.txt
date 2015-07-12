@@ -513,3 +513,11 @@
 	Enhancement: Fixed tabbing for "Ban User Agents" section in .htaccess files to match tabbing used by other sections.
 1.15.4 - 2015-06-16 - Chris Jean
 	Bug Fix: Fixed handling of wp-config.php files that are one directory up from the ABSPATH directory.
+1.16.0 - 2015-07-06 - Chris Jean
+	Feature Removal: Removed the malware scanning and malware wp-cli integration features as VirusTotal no longer supports scanning from WordPress sites. A replacement is in the works.
+	Bug Fix: The close button on the "Thank you for activating iThemes Security" message now appears in the correct location.
+	Bug Fix: Removed the site's URL being displayed in the "Replace jQuery With a Safe Version" setting details.
+	Bug Fix: Updated .htaccess rules to be compatible with Apache 2.4 without the auth compat module.
+	Bug Fix: Enabling and disabling the "Remove File Writing Permissions" setting now updates the file permissions properly.
+	Bug Fix: Web servers that cannot be recognized now default to Apache.
+	Enhancement: Updated the hackrepair lists.

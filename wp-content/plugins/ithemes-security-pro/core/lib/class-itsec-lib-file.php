@@ -286,7 +286,6 @@ class ITSEC_Lib_File {
 			return new WP_Error( 'itsec-lib-file-chmod-chmod-is-disabled', sprintf( __( 'The file %s could not have its permissions updated as the chmod() function is disabled. This is a system configuration issue.', 'it-l10n-ithemes-security-pro' ), $file ) );
 		}
 		
-		
 		return @chmod( $file, $perms );
 	}
 	
@@ -338,7 +337,7 @@ class ITSEC_Lib_File {
 		
 		@clearstatcache( true, $file );
 		
-		return fileperms( $file ) & 0777 | 0600;
+		return fileperms( $file ) & 0777;
 	}
 	
 	/**

@@ -60,10 +60,9 @@ class ITSEC_Lib_Utility {
 	 *
 	 * @since 1.15.0
 	 *
-	 * @return string|bool Either apache, IIS, lighttpd, litespeed, nginx, thttpd, or boolean false if unknown.
+	 * @return string Returns apache, nginx, litespeed, or iis. Defaults to apache when the server cannot be identified.
 	 */
 	public static function get_web_server() {
-		// Allows to override server authentication for testing or other reasons.
 		if ( defined( 'ITSEC_SERVER_OVERRIDE' ) ) {
 			return ITSEC_SERVER_OVERRIDE;
 		}
@@ -75,8 +74,6 @@ class ITSEC_Lib_Utility {
 			$server_software = '';
 		}
 		
-		$server = '';
-		
 		if ( false !== strpos( $server_software, 'apache' ) ) {
 			$server = 'apache';
 		} else if ( false !== strpos( $server_software, 'nginx' ) ) {
@@ -85,6 +82,10 @@ class ITSEC_Lib_Utility {
 			$server = 'litespeed';
 		} else if ( false !== strpos( $server_software, 'thttpd' ) ) {
 			$server = 'thttpd';
+		} else if ( false !== strpos( $server_software, 'microsoft-iis' ) ) {
+			$server = 'iis';
+		} else {
+			$server = 'apache';
 		}
 		
 		return apply_filters( 'itsec_filter_web_server', $server );

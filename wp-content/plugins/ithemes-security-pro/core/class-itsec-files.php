@@ -57,15 +57,6 @@ final class ITSEC_Files {
 	private $config_changed;
 
 	/**
-	 * Whether or not the file writer is actually allowed to physically modify files.
-	 *
-	 * @since  4.0.0
-	 * @access private
-	 * @var bool
-	 */
-	private $write_files;
-
-	/**
 	 * Create and manage wp_config.php or .htaccess/nginx rewrites.
 	 *
 	 * Executes primary file actions at plugins_loaded.
@@ -80,19 +71,6 @@ final class ITSEC_Files {
 		$this->config_changed   = false;
 		$this->rewrite_rules    = array();
 		$this->wpconfig_rules   = array();
-
-		//look for the tweaks module to see if we should reset to 0444
-		$tweaks = get_site_option( 'itsec_tweaks' );
-
-		if ( false !== $tweaks && isset( $tweaks['write_permissions'] ) ) {
-
-			$this->write_files = $tweaks['write_permissions'];
-
-		} else {
-
-			$this->write_files = false;
-
-		}
 
 		//Add the metabox
 		add_action( 'itsec_add_admin_meta_boxes', array( $this, 'add_admin_meta_boxes' ) );

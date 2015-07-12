@@ -138,7 +138,8 @@ class ITSEC_Lib_Config_File {
 		$file_path = self::get_server_config_file_path();
 		
 		if ( empty( $file_path ) ) {
-			return new WP_Error( 'itsec-lib-config-file-server-config-file-updates-disabled', __( 'Updates to the server config file are disabled via a filter.', 'it-l10n-ithemes-security-pro' ) );
+			return true;
+//			return new WP_Error( 'itsec-lib-config-file-server-config-file-updates-disabled', __( 'Updates to the server config file are disabled via a filter.', 'it-l10n-ithemes-security-pro' ) );
 		}
 		
 		return self::update( $file_path, $server, $modification, $clear_existing_modifications );
@@ -536,10 +537,14 @@ class ITSEC_Lib_Config_File {
 	 */
 	protected static function get_comment_delimiter( $type ) {
 		if ( 'wp-config' === $type ) {
-			return '//';
+			$delimiter = '//';
+		} else {
+			$delimiter = '#';
 		}
 		
-		return '#';
+		$delimiter = apply_filters( 'itsec_filter_server_config_file_comment_delimiter', $delimiter, $type );
+		
+		return $delimiter;
 	}
 	
 	/**
@@ -680,21 +685,22 @@ class ITSEC_Lib_Config_File {
 	 * @since 1.15.0
 	 * @access protected
 	 *
-	 * @return string File name of the config file used for the server or a blank string if modifications for the server
-	 *                config file are disabled.
+	 * @return string|bool File name of the config file used for the server, a blank string if modifications for the
+	 *                     server config file are disabled, or a boolean false if the server is not recognized.
 	 */
 	protected static function get_default_server_config_file_name() {
 		$server = ITSEC_Lib_Utility::get_web_server();
 		
 		$defaults = array(
-			'apache' => '.htaccess',
-			'nginx'  => 'nginx.conf',
+			'apache'    => '.htaccess',
+			'litespeed' => '.htaccess',
+			'nginx'     => 'nginx.conf',
 		);
 		
 		if ( isset( $defaults[$server] ) ) {
 			$name = $defaults[$server];
 		} else {
-			$name = '';
+			$name = false;
 		}
 		
 		return apply_filters( 'itsec_filter_default_server_config_file_name', $name, $server );

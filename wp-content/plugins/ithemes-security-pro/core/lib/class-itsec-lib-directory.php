@@ -220,7 +220,7 @@ class ITSEC_Lib_Directory {
 		$dir = rtrim( $dir, '/' );
 		@clearstatcache( true, $dir );
 		
-		return fileperms( $dir ) & 0777 | 0700;
+		return fileperms( $dir ) & 0777;
 	}
 	
 	/**

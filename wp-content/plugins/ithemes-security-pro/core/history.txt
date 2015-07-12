@@ -252,3 +252,14 @@
 	Enhancement: Improved error messages for situations when the .htaccess, nginx.conf, or wp-config.php files may need to be manually updated.
 1.14.3 - 2015-06-16 - Chris Jean
 	Bug Fix: Fixed support for wp-config.php files placed one directory above the ABSPATH.
+1.14.4 - 2015-06-18 - Chris Jean
+	Bug Fix: Manual backups now work as expected after changing the content directory.
+	Bug Fix: Readded support for Litespeed .htaccess file modifications.
+1.15.0 - 2015-07-02 - Chris Jean
+	Feature Removal: Removed the malware scanning feature as VirusTotal no longer supports scanning from WordPress sites. A replacement is in the works.
+	Bug Fix: The close button on the "Thank you for activating iThemes Security" message now appears in the correct location.
+	Bug Fix: Removed the site's URL being displayed in the "Replace jQuery With a Safe Version" setting details.
+	Bug Fix: Updated .htaccess rules to be compatible with Apache 2.4 without the auth compat module.
+	Bug Fix: Enabling and disabling the "Remove File Writing Permissions" setting now updates the file permissions properly.
+	Bug Fix: Web servers that cannot be recognized now default to Apache.
+	Enhancement: Updated the hackrepair lists.
