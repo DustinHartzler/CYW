@@ -118,9 +118,15 @@ class GFCommon {
 				$thousands_sep = $include_thousands_sep ? ',' : '';
 			}
 
+			$is_negative = $number < 0;
+
 			$number    = explode( '.', $number );
-			$number[0] = number_format( floatval( $number[0] ), 0, '', $thousands_sep );
+			$number[0] = number_format( absint( $number[0] ), 0, '', $thousands_sep );
 			$number    = implode( $dec_point, $number );
+
+			if ( $is_negative ) {
+				$number = '-' . $number;
+			}
 		}
 
 		return $number;
@@ -351,7 +357,6 @@ class GFCommon {
 					<option value="<?php echo $tag['tag']; ?>"><?php echo $tag['label']; ?></option>
 				<?php
 				}
-
 				if ( $group_label ) {
 					?>
 					</optgroup>
@@ -1227,7 +1232,7 @@ class GFCommon {
 
 	public static function get_submitted_pricing_fields( $form, $lead, $format, $use_text = true, $use_admin_label = false ) {
 		$form_id     = $form['id'];
-		$order_label = apply_filters( "gform_order_label_{$form['id']}", apply_filters( 'gform_order_label', esc_html__( 'Order' , 'gravityforms' ), $form['id'] ), $form['id'] );
+		$order_label = gf_apply_filters( 'gform_order_label', $form_id, esc_html__( 'Order' , 'gravityforms' ), $form['id'] );
 		$products    = GFCommon::get_product_fields( $form, $lead, $use_text, $use_admin_label );
 		$total       = 0;
 		$field_data  = '';
@@ -1276,10 +1281,10 @@ class GFCommon {
                             <td>
                                 <table cellspacing="0" width="97%" style="border-left:1px solid #DFDFDF; border-top:1px solid #DFDFDF">
                                 <thead>
-                                    <th style="background-color:#F4F4F4; border-bottom:1px solid #DFDFDF; border-right:1px solid #DFDFDF; padding:7px; font-family: sans-serif; font-size:12px; text-align:left">' . apply_filters( "gform_product_{$form_id}", apply_filters( 'gform_product', esc_html__( 'Product' , 'gravityforms' ), $form_id ), $form_id ) . '</th>
-                                    <th style="background-color:#F4F4F4; border-bottom:1px solid #DFDFDF; border-right:1px solid #DFDFDF; padding:7px; width:50px; font-family: sans-serif; font-size:12px; text-align:center">' . apply_filters( "gform_product_qty_{$form_id}", apply_filters( 'gform_product_qty', esc_html__( 'Qty' , 'gravityforms' ), $form_id ), $form_id ) . '</th>
-                                    <th style="background-color:#F4F4F4; border-bottom:1px solid #DFDFDF; border-right:1px solid #DFDFDF; padding:7px; width:155px; font-family: sans-serif; font-size:12px; text-align:left">' . apply_filters( "gform_product_unitprice_{$form_id}", apply_filters( 'gform_product_unitprice', esc_html__( 'Unit Price' , 'gravityforms' ), $form_id ), $form_id ) . '</th>
-                                    <th style="background-color:#F4F4F4; border-bottom:1px solid #DFDFDF; border-right:1px solid #DFDFDF; padding:7px; width:155px; font-family: sans-serif; font-size:12px; text-align:left">' . apply_filters( "gform_product_price_{$form_id}", apply_filters( 'gform_product_price', esc_html__( 'Price' , 'gravityforms' ), $form_id ), $form_id ) . '</th>
+                                    <th style="background-color:#F4F4F4; border-bottom:1px solid #DFDFDF; border-right:1px solid #DFDFDF; padding:7px; font-family: sans-serif; font-size:12px; text-align:left">' . gf_apply_filters( 'gform_product', $form_id, esc_html__( 'Product' , 'gravityforms' ), $form_id ) . '</th>
+                                    <th style="background-color:#F4F4F4; border-bottom:1px solid #DFDFDF; border-right:1px solid #DFDFDF; padding:7px; width:50px; font-family: sans-serif; font-size:12px; text-align:center">' . gf_apply_filters( 'gform_product_qty', $form_id, esc_html__( 'Qty' , 'gravityforms' ), $form_id ) . '</th>
+                                    <th style="background-color:#F4F4F4; border-bottom:1px solid #DFDFDF; border-right:1px solid #DFDFDF; padding:7px; width:155px; font-family: sans-serif; font-size:12px; text-align:left">' . gf_apply_filters( 'gform_product_unitprice', $form_id, esc_html__( 'Unit Price' , 'gravityforms' ), $form_id ) . '</th>
+                                    <th style="background-color:#F4F4F4; border-bottom:1px solid #DFDFDF; border-right:1px solid #DFDFDF; padding:7px; width:155px; font-family: sans-serif; font-size:12px; text-align:left">' . gf_apply_filters( 'gform_product_price', $form_id, esc_html__( 'Price' , 'gravityforms' ), $form_id ) . '</th>
                                 </thead>
                                 <tbody>';
 
@@ -1368,10 +1373,10 @@ class GFCommon {
 
 		//handling autoresponder email
 		$to_field = isset( $form['autoResponder']['toField'] ) ? rgget( $form['autoResponder']['toField'], $lead ) : '';
-		$to       = apply_filters( "gform_autoresponder_email_{$form_id}", apply_filters( 'gform_autoresponder_email', $to_field, $form ), $form );
+		$to       = gf_apply_filters( 'gform_autoresponder_email', $form_id, $to_field, $form );
 		$subject  = GFCommon::replace_variables( rgget( 'subject', $form['autoResponder'] ), $form, $lead, false, false );
 
-		$message_format = apply_filters( "gform_notification_format_{$form['id']}", apply_filters( 'gform_notification_format', 'html', 'user', $form, $lead ), 'user', $form, $lead );
+		$message_format = gf_apply_filters( 'gform_notification_format', $form_id, 'html', 'user', $form, $lead );
 		$message        = GFCommon::replace_variables( rgget( 'message', $form['autoResponder'] ), $form, $lead, false, false, ! rgget( 'disableAutoformat', $form['autoResponder'] ), $message_format );
 
 		if ( apply_filters( 'gform_enable_shortcode_notification_message', true, $form, $lead ) ) {
@@ -1392,7 +1397,7 @@ class GFCommon {
 			}
 		}
 
-		$attachments = apply_filters( "gform_user_notification_attachments_{$form_id}", apply_filters( 'gform_user_notification_attachments', array(), $lead, $form ), $lead, $form );
+		$attachments = gf_apply_filters( 'gform_user_notification_attachments', $form_id, array(), $lead, $form );
 
 		//Disabling autoformat to prevent double autoformatting of messages
 		$disableAutoformat = '1';
@@ -1406,7 +1411,7 @@ class GFCommon {
 		//handling admin notification email
 		$subject = GFCommon::replace_variables( rgget( 'subject', $form['notification'] ), $form, $lead, false, false );
 
-		$message_format = apply_filters( "gform_notification_format_{$form['id']}", apply_filters( 'gform_notification_format', 'html', 'admin', $form, $lead ), 'admin', $form, $lead );
+		$message_format = gf_apply_filters( 'gform_notification_format', $form_id, 'html', 'admin', $form, $lead );
 		$message        = GFCommon::replace_variables( rgget( 'message', $form['notification'] ), $form, $lead, false, false, ! rgget( 'disableAutoformat', $form['notification'] ), $message_format );
 
 		if ( apply_filters( 'gform_enable_shortcode_notification_message', true, $form, $lead ) ) {
@@ -1457,7 +1462,7 @@ class GFCommon {
 		$from_name = GFCommon::replace_variables( $from_name, $form, $lead, false, false );
 
 		//Filters the admin notification email to address. Allows users to change email address before notification is sent
-		$to = apply_filters( "gform_notification_email_{$form_id}", apply_filters( 'gform_notification_email', $email_to, $lead ), $lead );
+		$to = gf_apply_filters( 'gform_notification_email', $form_id, $email_to, $lead );
 
 		// override default values if override options provided
 		if ( $override_options && is_array( $override_options ) ) {
@@ -1466,7 +1471,7 @@ class GFCommon {
 			}
 		}
 
-		$attachments = apply_filters( "gform_admin_notification_attachments_{$form_id}", apply_filters( 'gform_admin_notification_attachments', array(), $lead, $form ), $lead, $form );
+		$attachments = gf_apply_filters( 'gform_admin_notification_attachments', $form_id, array(), $lead, $form );
 
 		//Disabling autoformat to prevent double autoformatting of messages
 		$disableAutoformat = '1';
@@ -1478,7 +1483,7 @@ class GFCommon {
 	public static function send_notification( $notification, $form, $lead ) {
 
 		GFCommon::log_debug( "GFCommon::send_notification(): Starting to process notification (#{$notification['id']} - {$notification['name']})." );
-		$notification = apply_filters( "gform_notification_{$form['id']}", apply_filters( 'gform_notification', $notification, $form, $lead ), $form, $lead );
+		$notification = gf_apply_filters( 'gform_notification', $form['id'], $notification, $form, $lead );
 
 		$to_field = '';
 		if ( rgar( $notification, 'toType' ) == 'field' ) {
@@ -1666,6 +1671,12 @@ class GFCommon {
 		if ( is_wp_error( $error ) ) {
 			GFCommon::log_error( 'GFCommon::send_email(): ' . $error->get_error_message() );
 			GFCommon::log_error( print_r( compact( 'to', 'subject', 'message' ), true ) );
+
+			/**
+			 * Fires when an email from Gravity Forms has failed to send
+			 *
+			 * @param string $error The Error message returned after the email fails to send
+			 */
 			do_action( 'gform_send_email_failed', $error, compact( 'from', 'to', 'bcc', 'reply_to', 'subject', 'message', 'from_name', 'message_format', 'attachments' ) );
 
 			return;
@@ -1675,7 +1686,7 @@ class GFCommon {
 		$name         = empty( $from_name ) ? $from : $from_name;
 
 		$headers         = array();
-		$headers['From'] = "From: \"" . wp_strip_all_tags($name, true) . "\" <{$from}>";
+		$headers['From'] = "From: \"" . wp_strip_all_tags( $name, true ) . "\" <{$from}>";
 
 		if ( GFCommon::is_valid_email_list( $reply_to ) ) {
 			$headers['Reply-To'] = "Reply-To: {$reply_to}";
@@ -1716,6 +1727,21 @@ class GFCommon {
 
 		self::add_emails_sent();
 
+		/**
+		 * Fires after Gravity Forms has sent an email
+		 *
+		 * @param bool $is_success Check if the email was successfully sent
+		 * @param string $to The user Email to send to
+		 * @param string $subject The Subject of the email sent out
+		 * @param string $message The Message sent with a notification, alert, etc.
+		 * @param string $headers The email headers (the content-type and charset)
+		 * @param string $attachments The email attachments sent along
+		 * @param string $message_fomrat The Message format (HTML/Plain Text)
+		 * @param string $from Who the email is coming from
+		 * @param string $form_name The Name of the user who is associated with the from email
+		 * @param string $bcc The blind carbon copy which is an extra email that won't appear in the email header
+		 * @param string $reply_to A header that allows you to reply to another email
+		 */
 		do_action( 'gform_after_email', $is_success, $to, $subject, $message, $headers, $attachments, $message_format, $from, $from_name, $bcc, $reply_to );
 	}
 
@@ -2156,7 +2182,7 @@ class GFCommon {
 
 	public static function date_display( $value, $input_format = 'mdy', $output_format = false ) {
 
-		if( ! $output_format ) {
+		if ( ! $output_format ) {
 			$output_format = $input_format;
 		}
 
@@ -2368,7 +2394,13 @@ class GFCommon {
 					}
 				}
 
-				$choices .= sprintf( "<option value='%s' %s>%s</option>", esc_attr( $field_value ), $selected, esc_html( $choice['text'] ) );
+				$choice_markup = sprintf( "<option value='%s' %s>%s</option>", esc_attr( $field_value ), $selected, esc_html( $choice['text'] ) );
+
+				$choices .= gf_apply_filters( 'gform_field_choice_markup_pre_render', array(
+					$field->formId,
+					$field->id
+				), $choice_markup, $choice, $field, $value );
+
 			}
 		}
 
@@ -2714,6 +2746,11 @@ class GFCommon {
 		$currency = get_option( 'rg_gforms_currency' );
 		$currency = empty( $currency ) ? 'USD' : $currency;
 
+		/**
+		 * Filter the currency for Gravity Form Product fields
+		 *
+		 * @param string $currency The currency string for products (USD, EUR, GPB, etc)
+		 */
 		return apply_filters( 'gform_currency', $currency );
 	}
 
@@ -2892,7 +2929,7 @@ class GFCommon {
 
 			$product_info = array( 'products' => $products, 'shipping' => array( 'id' => $shipping_field_id, 'name' => $shipping_name, 'price' => $shipping_price ) );
 
-			$product_info = apply_filters( "gform_product_info_{$form['id']}", apply_filters( 'gform_product_info', $product_info, $form, $lead ), $form, $lead );
+			$product_info = gf_apply_filters( 'gform_product_info', $form['id'], $product_info, $form, $lead );
 
 			// save static copy of product info (only for 'real' entries)
 			if ( ! rgempty( 'id', $lead ) && ! empty( $product_info['products'] ) ) {
@@ -2980,7 +3017,7 @@ class GFCommon {
 
 		// if no option is set, leave akismet enabled; otherwise, use option value true/false
 		$enabled_by_setting = get_option( 'rg_gforms_enable_akismet' ) === false ? true : get_option( 'rg_gforms_enable_akismet' ) == true;
-		$enabled_by_filter  = apply_filters( "gform_akismet_enabled_$form_id", apply_filters( 'gform_akismet_enabled', $enabled_by_setting ) );
+		$enabled_by_filter  = gf_apply_filters( 'gform_akismet_enabled', $form_id, $enabled_by_setting );
 
 		return $enabled_by_filter;
 
@@ -3041,7 +3078,7 @@ class GFCommon {
 		$akismet_info['referrer']             = $is_admin ? '' : $_SERVER['HTTP_REFERER'];
 		$akismet_info['blog']                 = get_option( 'home' );
 
-		$akismet_info = apply_filters( "gform_akismet_fields_{$form['id']}", apply_filters( 'gform_akismet_fields', $akismet_info, $form, $lead ), $form, $lead );
+		$akismet_info = gf_apply_filters( 'gform_akismet_fields', $form['id'], $akismet_info, $form, $lead );
 
 		return http_build_query( $akismet_info );
 	}
@@ -3116,7 +3153,7 @@ class GFCommon {
 	}
 
 	public static function create_post( $form, &$lead ) {
-		$disable_post = apply_filters( "gform_disable_post_creation_{$form['id']}", apply_filters( 'gform_disable_post_creation', false, $form, $lead ), $form, $lead );
+		$disable_post = gf_apply_filters( 'gform_disable_post_creation', $form['id'], false, $form, $lead );
 		$post_id      = 0;
 		if ( ! $disable_post ) {
 			//creates post if the form has any post fields
@@ -3313,7 +3350,7 @@ class GFCommon {
 			}
 		}
 
-		$args  = apply_filters( "gform_post_category_args_{$field->id}", apply_filters( 'gform_post_category_args', $args, $field ), $field );
+		$args  = gf_apply_filters( 'gform_post_category_args', $field->id, $args, $field );
 		$terms = get_terms( 'category', $args );
 
 		$terms_copy = unserialize( serialize( $terms ) ); // deep copy the terms to avoid repeating GFCategoryWalker on previously cached terms.
@@ -3366,8 +3403,10 @@ class GFCommon {
 
 		$form_id = $is_admin ? rgget( 'id' ) : $field->formId;
 
-		$field->choices = apply_filters( 'gform_post_category_choices', $field->choices, $field, $form_id );
-		$field->choices = apply_filters( "gform_post_category_choices_{$form_id}_{$field->id}", $field->choices, $field, $form_id );
+		$field->choices = gf_apply_filters( 'gform_post_category_choices', array(
+			$form_id,
+			$field->id
+		), $field->choices, $field, $form_id );
 
 		if ( RGFormsModel::get_input_type( $field ) == 'checkbox' ) {
 			$field->inputs = $inputs;
@@ -3798,6 +3837,15 @@ class GFCommon {
 					$sub_filters[]                 = $sub_filter;
 				}
 				$field_filter['filters'] = $sub_filters;
+			} elseif( $input_type == 'date') {
+				$field_filter['key']             = $key;
+				$field_filter['preventMultiple'] = false;
+				$field_filter['text']            = GFFormsModel::get_label( $field );
+
+				$field_filter['operators'] = $operators;
+
+				$field_filter['placeholder'] = esc_html__('yyyy-mm-dd', 'gravityforms' );
+				$field_filter['cssClass'] = 'datepicker ymd_dash';
 			} else {
 				$field_filter['key']             = $key;
 				$field_filter['preventMultiple'] = false;
@@ -3854,7 +3902,8 @@ class GFCommon {
 			'date_created'   => array(
 				'text'        => esc_html__( 'Entry Date' , 'gravityforms' ),
 				'operators'   => array( 'is', '>', '<' ),
-				'placeholder' => __( 'yyyy-mm-dd' , 'gravityforms' )
+				'placeholder' => __( 'yyyy-mm-dd' , 'gravityforms' ),
+				'cssClass' => 'datepicker ymd_dash',
 			),
 			'is_starred'     => array(
 				'text'      => esc_html__( 'Starred' , 'gravityforms' ),
@@ -3906,7 +3955,9 @@ class GFCommon {
 			),
 			'payment_date'   => array(
 				'text'      => esc_html__( 'Payment Date' , 'gravityforms' ),
-				'operators' => array( 'is', 'isnot', '>', '<' )
+				'operators' => array( 'is', 'isnot', '>', '<' ),
+				'placeholder' => __( 'yyyy-mm-dd' , 'gravityforms' ),
+				'cssClass' => 'datepicker ymd_dash',
 			),
 			'payment_amount' => array(
 				'text'      => esc_html__( 'Payment Amount' , 'gravityforms' ),

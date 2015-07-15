@@ -237,7 +237,10 @@ class GF_Field_Checkbox extends GF_Field {
 								<label for='choice_{$id}' id='label_{$id}'>{$choice['text']}</label>
 							</li>";
 
-				$choices .= apply_filters( 'gform_field_choice_markup_pre_render_' . $this->formId, apply_filters( 'gform_field_choice_markup_pre_render', $choice_markup, $choice, $this, $value ), $choice, $this, $value );
+				$choices .= gf_apply_filters( 'gform_field_choice_markup_pre_render', array(
+					$this->formId,
+					$this->id
+				), $choice_markup, $choice, $this, $value );
 
 				$is_entry_detail = $this->is_entry_detail();
 				$is_form_editor  = $this->is_form_editor();
@@ -256,7 +259,7 @@ class GF_Field_Checkbox extends GF_Field {
 			}
 		}
 
-		return apply_filters( 'gform_field_choices_' . $this->formId, apply_filters( 'gform_field_choices', $choices, $this ), $this );
+		return gf_apply_filters( 'gform_field_choices', $this->formId, $choices, $this );
 
 	}
 

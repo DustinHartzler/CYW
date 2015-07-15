@@ -526,7 +526,7 @@ class GF_Field extends stdClass implements ArrayAccess {
 		//allow HTML for certain field types
 		$allow_html = $this->allow_html();
 
-		$allowable_tags = apply_filters( "gform_allowable_tags_{$form_id}", apply_filters( 'gform_allowable_tags', $allow_html, $this, $form_id ), $this, $form_id );
+		$allowable_tags = gf_apply_filters( 'gform_allowable_tags', $form_id, $allow_html, $this, $form_id );
 
 
 		if ( $allowable_tags !== true ) {

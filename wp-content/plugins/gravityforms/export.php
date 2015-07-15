@@ -80,8 +80,12 @@ class GFExport {
 					}
 				}
 
-				$form = apply_filters( 'gform_export_form', $form );
-				$form = apply_filters( "gform_export_form_{$form['id']}", $form );
+				/**
+				 * Allows you to filter and modify the Export Form
+				 *
+				 * @param array $form Assign which Gravity Form to change the export form for
+				 */
+				$form = gf_apply_filters( 'gform_export_form', $form['id'], $form );
 
 			}
 
@@ -649,7 +653,7 @@ class GFExport {
 		$lines = chr( 239 ) . chr( 187 ) . chr( 191 );
 
 		// set the separater
-		$separator = apply_filters( 'gform_export_separator_' . $form_id, apply_filters( 'gform_export_separator', ',', $form_id ), $form_id );
+		$separator = gf_apply_filters( 'gform_export_separator', $form_id, ',', $form_id );
 
 		$field_rows = self::get_field_row_count( $form, $fields, $entry_count );
 
@@ -689,7 +693,7 @@ class GFExport {
 			);
 			$leads  = GFAPI::get_entries( $form_id, $search_criteria, $sorting, $paging );
 
-			$leads = apply_filters( "gform_leads_before_export_$form_id", apply_filters( 'gform_leads_before_export', $leads, $form, $paging ), $form, $paging );
+			$leads = gf_apply_filters( 'gform_leads_before_export', $form_id, $leads, $form, $paging );
 
 			foreach ( $leads as $lead ) {
 				foreach ( $fields as $field_id ) {
@@ -771,6 +775,14 @@ class GFExport {
 			$lines = '';
 		}
 
+		/**
+		 * Fires after exporting all the entries in form
+		 *
+		 * @param array $form The Form object to get the entries from
+		 * @param string $start_date The start date for when the export of entries should take place
+		 * @param string $end_date The end date for when the export of entries should stop
+		 * @param array $fields The specified fields where the entries should be exported from
+		 */
 		do_action( 'gform_post_export_entries', $form, $start_date, $end_date, $fields );
 
 	}

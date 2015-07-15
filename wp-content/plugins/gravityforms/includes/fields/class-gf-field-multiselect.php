@@ -51,7 +51,7 @@ class GF_Field_MultiSelect extends GF_Field {
 		$tabindex      = $this->get_tabindex();
 		$disabled_text = $is_form_editor ? 'disabled="disabled"' : '';
 
-		$placeholder = $this->enableEnhancedUI ? "data-placeholder='" . esc_attr( apply_filters( "gform_multiselect_placeholder_{$form_id}", apply_filters( 'gform_multiselect_placeholder', esc_attr__( 'Click to select...', 'gravityforms' ), $form_id ), $form_id ) ) . "'" : '';
+		$placeholder = $this->enableEnhancedUI ? "data-placeholder='" . esc_attr( gf_apply_filters( 'gform_multiselect_placeholder', $form_id, esc_attr__( 'Click to select...', 'gravityforms' ), $form_id ) ) . "'" : '';
 
 		$size = $this->multiSelectSize;
 		if ( empty( $size ) ) {

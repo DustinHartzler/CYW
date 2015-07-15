@@ -17,7 +17,7 @@ class GFEntryDetail {
 
 		$form    = RGFormsModel::get_form_meta( absint( $_GET['id'] ) );
 		$form_id = absint( $form['id'] );
-		$form    = apply_filters( 'gform_admin_pre_render_' . $form_id, apply_filters( 'gform_admin_pre_render', $form ) );
+		$form    = gf_apply_filters( 'gform_admin_pre_render', $form_id, $form );
 		$lead_id = absint( rgget( 'lid' ) );
 
 		$filter = rgget( 'filter' );
@@ -116,8 +116,7 @@ class GFEntryDetail {
 				GFFormsModel::$uploaded_files[ $form_id ] = $files;
 				GFFormsModel::save_lead( $form, $lead );
 
-				do_action( 'gform_after_update_entry', $form, $lead['id'] );
-				do_action( "gform_after_update_entry_{$form['id']}", $form, $lead['id'] );
+				gf_do_action( 'gform_after_update_entry', $form['id'], $form, $lead['id'] );
 
 				$lead = RGFormsModel::get_lead( $lead['id'] );
 				$lead = GFFormsModel::set_entry_meta( $lead, $form );
@@ -647,7 +646,7 @@ class GFEntryDetail {
 	}
 
 	public static function lead_detail_edit( $form, $lead ) {
-		$form    = apply_filters( 'gform_admin_pre_render_' . $form['id'], apply_filters( 'gform_admin_pre_render', $form ) );
+		$form    = gf_apply_filters( 'gform_admin_pre_render', $form['id'], $form );
 		$form_id = absint( $form['id'] );
 		?>
 		<div class="postbox">
@@ -770,7 +769,7 @@ class GFEntryDetail {
 								<?php esc_html_e( 'added on', 'gravityforms' ); ?> <?php echo esc_html( GFCommon::format_date( $note->date_created, false ) ) ?>
 							</p>
 						</div>
-						<div class="detail-note-content<?php echo $class ?>"><?php echo esc_html( $note->value ) ?></div>
+						<div class="detail-note-content<?php echo $class ?>"><?php echo nl2br( esc_html( $note->value ) ) ?></div>
 					</td>
 
 				</tr>
@@ -830,7 +829,7 @@ class GFEntryDetail {
 				<th id="details">
 					<?php
 					$title = sprintf( '%s : %s %s', esc_html( $form['title'] ), esc_html__( 'Entry # ', 'gravityforms' ), absint( $lead['id'] ) );
-					echo apply_filters( 'gravityflow_title_entry_detail', $title, $form, $lead );
+					echo apply_filters( 'gform_entry_detail_title', $title, $form, $lead );
 					?>
 				</th>
 				<th style="width:140px; font-size:10px; text-align: right;">
@@ -914,7 +913,7 @@ class GFEntryDetail {
 				if ( ! empty( $products['products'] ) ) {
 					?>
 					<tr>
-						<td colspan="2" class="entry-view-field-name"><?php echo esc_html( apply_filters( "gform_order_label_{$form_id}", apply_filters( 'gform_order_label', __( 'Order', 'gravityforms' ), $form_id ), $form_id ) ); ?></td>
+						<td colspan="2" class="entry-view-field-name"><?php echo esc_html( gf_apply_filters( 'gform_order_label', $form_id, __( 'Order', 'gravityforms' ), $form_id ) ); ?></td>
 					</tr>
 					<tr>
 						<td colspan="2" class="entry-view-field-value lastrow">
@@ -926,10 +925,10 @@ class GFEntryDetail {
 									<col class="entry-products-col4" />
 								</colgroup>
 								<thead>
-								<th scope="col"><?php echo apply_filters( "gform_product_{$form_id}", apply_filters( 'gform_product', __( 'Product', 'gravityforms' ), $form_id ), $form_id ); ?></th>
-								<th scope="col" class="textcenter"><?php echo esc_html( apply_filters( "gform_product_qty_{$form_id}", apply_filters( 'gform_product_qty', __( 'Qty', 'gravityforms' ), $form_id ), $form_id ) ); ?></th>
-								<th scope="col"><?php echo esc_html( apply_filters( "gform_product_unitprice_{$form_id}", apply_filters( 'gform_product_unitprice', __( 'Unit Price', 'gravityforms' ), $form_id ), $form_id ) ); ?></th>
-								<th scope="col"><?php echo esc_html( apply_filters( "gform_product_price_{$form_id}", apply_filters( 'gform_product_price', __( 'Price', 'gravityforms' ), $form_id ), $form_id ) ); ?></th>
+								<th scope="col"><?php echo gf_apply_filters( 'gform_product', $form_id, __( 'Product', 'gravityforms' ), $form_id ); ?></th>
+								<th scope="col" class="textcenter"><?php echo esc_html( gf_apply_filters( 'gform_product_qty', $form_id, __( 'Qty', 'gravityforms' ), $form_id ) ); ?></th>
+								<th scope="col"><?php echo esc_html( gf_apply_filters( 'gform_product_unitprice', $form_id, __( 'Unit Price', 'gravityforms' ), $form_id ) ); ?></th>
+								<th scope="col"><?php echo esc_html( gf_apply_filters( 'gform_product_price', $form_id, __( 'Price', 'gravityforms' ), $form_id ) ); ?></th>
 								</thead>
 								<tbody>
 								<?php

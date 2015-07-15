@@ -37,6 +37,8 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 	protected $current_submission_data = false;
 	protected $is_payment_gateway = false;
 
+	protected $_single_feed_submission = true;
+
 
 	//--------- Initialization ----------
 	public function pre_init() {
@@ -77,8 +79,17 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 		if ( rgget( 'page' ) == 'gf_entries' ) {
 			add_action( 'gform_payment_details', array( $this, 'entry_info' ), 10, 2 );
 			add_action( 'gform_enable_entry_info_payment_details', array( $this, 'disable_entry_info_payment' ), 10, 2 );
-			add_filter( 'gform_notes_avatar', array( $this, 'notes_avatar' ), 10, 2 );
 		}
+	}
+	
+	public function init_frontend() {
+		
+		parent::init_frontend();
+		
+		add_filter( 'gform_register_init_scripts', array( $this, 'register_creditcard_token_script' ), 10, 3 );
+		add_filter( 'gform_field_content', array( $this, 'add_creditcard_token_input' ), 10, 5 );
+		add_filter( 'gform_form_args', array( $this, 'force_ajax_for_creditcard_tokens' ), 10, 1 );
+		
 	}
 
 	public function init_ajax() {
@@ -169,7 +180,7 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 	}
 
 	/**
-	 * Override this function to specify a URL to the third party payment processor. Useful when developing a payment gateway that processes the payment outsite of the website (i.e. PayPal Standard).
+	 * Override this function to specify a URL to the third party payment processor. Useful when developing a payment gateway that processes the payment outside of the website (i.e. PayPal Standard).
 	 *
 	 * @param $feed            - Active payment feed containing all the configuration data
 	 * @param $submission_data - Contains form field data submitted by the user as well as payment information (i.e. payment amount, setup fee, line items, etc...)
@@ -188,7 +199,7 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 			return $validation_result;
 		}
 
-		$form = $validation_result['form'];
+		$form  = $validation_result['form'];
 		$entry = GFFormsModel::create_lead( $form );
 		$feed  = $this->get_payment_feed( $entry, $form );
 
@@ -207,12 +218,12 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 		}
 
 
-		$this->is_payment_gateway = true;
-		$this->current_feed = $feed;
+		$this->is_payment_gateway      = true;
+		$this->current_feed            = $this->_single_submission_feed = $feed;
 		$this->current_submission_data = $submission_data;
 
 		$performed_authorization = false;
-		$is_subscription = $feed['meta']['transactionType'] == 'subscription';
+		$is_subscription         = $feed['meta']['transactionType'] == 'subscription';
 
 		if ( $this->payment_method_is_overridden( 'authorize' ) && ! $is_subscription ) {
 
@@ -334,10 +345,10 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 
 		$credit_card_page = 0;
 		foreach ( $validation_result['form']['fields'] as &$field ) {
-			if ( $field['type'] == 'creditcard' ) {
-				$field['failed_validation']  = true;
-				$field['validation_message'] = $authorization_result['error_message'];
-				$credit_card_page            = $field['pageNumber'];
+			if ( $field->type == 'creditcard' ) {
+				$field->failed_validation  = true;
+				$field->validation_message = $authorization_result['error_message'];
+				$credit_card_page          = $field->pageNumber;
 				break;
 			}
 		}
@@ -486,6 +497,9 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 
 		$txn_id = $wpdb->insert_id;
 
+		/**
+		 *
+		 */
 		do_action( 'gform_post_payment_transaction', $txn_id, $entry_id, $transaction_type, $transaction_id, $amount, $is_recurring );
 		if ( has_filter( 'gform_post_payment_transaction' ) ) {
 			$this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_post_payment_transaction.' );
@@ -538,7 +552,7 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 		foreach ( $billing_fields as $billing_field ) {
 			$field_name               = $billing_field['name'];
 			$input_id                 = rgar( $feed['meta'], "billingInformation_{$field_name}" );
-			$form_data[ $field_name ] = rgar( $entry, $input_id );
+			$form_data[ $field_name ] = $this->get_field_value( $form, $entry, $input_id );
 		}
 
 		//getting credit card field data
@@ -801,6 +815,37 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 			$this->register_callback( $action['id'], $action['entry_id'] );
 		}
 
+		/**
+		 * Fires right after the payment callback
+		 *
+		 * @param array $entry The Entry Object
+		 * @param array $action The Action Object
+		 * $action = array(
+		 *     'type' => 'cancel_subscription',     // See Below
+		 *     'transaction_id' => '',              // What is the ID of the transaction made?
+		 *     'subscription_id' => '',             // What is the ID of the Subscription made?
+		 *     'amount' => '0.00',                  // Amount to charge?
+		 *     'entry_id' => 1,                     // What entry to check?
+		 *     'transaction_type' => '',
+		 *     'payment_status' => '',
+		 *     'note' => ''
+		 * );
+		 *
+		 * 'type' can be:
+		 *
+		 * - complete_payment
+		 * - refund_payment
+		 * - fail_payment
+		 * - add_pending_payment
+		 * - void_authorization
+		 * - create_subscription
+		 * - cancel_subscription
+		 * - expire_subscription
+		 * - add_subscription_payment
+		 * - fail_subscription_payment
+		 *
+		 * @param mixed $result The Result Object
+		 */
 		do_action( 'gform_post_payment_callback', $entry, $action, $result );
 		if ( has_filter( 'gform_post_payment_callback' ) ) {
 			$this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_post_payment_callback.' );
@@ -885,6 +930,35 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 		$this->insert_transaction( $entry['id'], $action['transaction_type'], $action['transaction_id'], $action['amount'] );
 		$this->add_note( $entry['id'], $action['note'], 'success' );
 
+		/**
+		 * Fires after a payment is completed through a form
+		 *
+		 * @param array $entry The Entry object
+		 * @param array $action The Action Object
+		 * $action = array(
+		 *     'type' => 'cancel_subscription',     // See Below
+		 *     'transaction_id' => '',              // What is the ID of the transaction made?
+		 *     'subscription_id' => '',             // What is the ID of the Subscription made?
+		 *     'amount' => '0.00',                  // Amount to charge?
+		 *     'entry_id' => 1,                     // What entry to check?
+		 *     'transaction_type' => '',
+		 *     'payment_status' => '',
+		 *     'note' => ''
+		 * );
+		 *
+		 * 'type' can be:
+		 *
+		 * - complete_payment
+		 * - refund_payment
+		 * - fail_payment
+		 * - add_pending_payment
+		 * - void_authorization
+		 * - create_subscription
+		 * - cancel_subscription
+		 * - expire_subscription
+		 * - add_subscription_payment
+		 * - fail_subscription_payment
+		 */
 		do_action( 'gform_post_payment_completed', $entry, $action );
 		if ( has_filter( 'gform_post_payment_completed' ) ) {
 			$this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_post_payment_completed.' );
@@ -913,6 +987,35 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 		$this->insert_transaction( $entry['id'], $action['transaction_type'], $action['transaction_id'], $action['amount'] );
 		$this->add_note( $entry['id'], $action['note'] );
 
+		/**
+		 * Fires after a payment is refunded
+		 *
+		 * @param array $entry The Entry object
+		 * @param array $action The Action Object
+		 * $action = array(
+		 *     'type' => 'cancel_subscription',     // See Below
+		 *     'transaction_id' => '',              // What is the ID of the transaction made?
+		 *     'subscription_id' => '',             // What is the ID of the Subscription made?
+		 *     'amount' => '0.00',                  // Amount to charge?
+		 *     'entry_id' => 1,                     // What entry to check?
+		 *     'transaction_type' => '',
+		 *     'payment_status' => '',
+		 *     'note' => ''
+		 * );
+		 *
+		 * 'type' can be:
+		 *
+		 * - complete_payment
+		 * - refund_payment
+		 * - fail_payment
+		 * - add_pending_payment
+		 * - void_authorization
+		 * - create_subscription
+		 * - cancel_subscription
+		 * - expire_subscription
+		 * - add_subscription_payment
+		 * - fail_subscription_payment
+		 */
 		do_action( 'gform_post_payment_refunded', $entry, $action );
 		if ( has_filter( 'gform_post_payment_refunded' ) ) {
 			$this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_post_payment_refunded.' );
@@ -980,6 +1083,13 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 			$result = GFAPI::update_entry( $entry );
 			$this->add_note( $entry['id'], sprintf( esc_html__( 'Subscription has been created. Subscription Id: %s.', 'gravityforms' ), $subscription['subscription_id'] ), 'success' );
 
+
+			/**
+			 * Fires when someone starts a subscription
+			 *
+			 * @param array $entry Entry Object
+			 * @param array $subscription The new Subscription object
+			 */
 			do_action( 'gform_post_subscription_started', $entry, $subscription );
 			if ( has_filter( 'gform_post_subscription_started' ) ) {
 				$this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_post_subscription_started.' );
@@ -1017,6 +1127,35 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 		$this->insert_transaction( $entry['id'], $action['transaction_type'], $transaction_id, $action['amount'] );
 		$this->add_note( $entry['id'], $action['note'], 'success' );
 
+		/**
+		 * Fires after a payment is made on an existing subscription.
+		 *
+		 * @param array $entry The Entry Object
+		 * @param array $action The Action Object
+		 * $action = array(
+		 *     'type' => 'cancel_subscription',     // See Below
+		 *     'transaction_id' => '',              // What is the ID of the transaction made?
+		 *     'subscription_id' => '',             // What is the ID of the Subscription made?
+		 *     'amount' => '0.00',                  // Amount to charge?
+		 *     'entry_id' => 1,                     // What entry to check?
+		 *     'transaction_type' => '',
+		 *     'payment_status' => '',
+		 *     'note' => ''
+		 * );
+		 *
+		 * 'type' can be:
+		 *
+		 * - complete_payment
+		 * - refund_payment
+		 * - fail_payment
+		 * - add_pending_payment
+		 * - void_authorization
+		 * - create_subscription
+		 * - cancel_subscription
+		 * - expire_subscription
+		 * - add_subscription_payment
+		 * - fail_subscription_payment
+		 */
 		do_action( 'gform_post_add_subscription_payment', $entry, $action );
 		if ( has_filter( 'gform_post_add_subscription_payment' ) ) {
 			$this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_post_add_subscription_payment.' );
@@ -1037,10 +1176,42 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 		$this->add_note( $entry['id'], $action['note'], 'error' );
 
 		// keep 'gform_subscription_payment_failed' for backward compatability
+		/**
+		 * @deprecated Use gform_post_fail_subscription_payment now
+		 */
 		do_action( 'gform_subscription_payment_failed', $entry, $action['subscription_id'] );
 		if ( has_filter( 'gform_subscription_payment_failed' ) ) {
 			$this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_subscription_payment_failed.' );
 		}
+		/**
+		 * Fires after a subscription payment has failed
+		 *
+		 * @param array $entry The Entry Object
+		 * @param array $action The Action Object
+		 * $action = array(
+		 *     'type' => 'cancel_subscription',     // See Below
+		 *     'transaction_id' => '',              // What is the ID of the transaction made?
+		 *     'subscription_id' => '',             // What is the ID of the Subscription made?
+		 *     'amount' => '0.00',                  // Amount to charge?
+		 *     'entry_id' => 1,                     // What entry to check?
+		 *     'transaction_type' => '',
+		 *     'payment_status' => '',
+		 *     'note' => ''
+		 * );
+		 *
+		 * 'type' can be:
+		 *
+		 * - complete_payment
+		 * - refund_payment
+		 * - fail_payment
+		 * - add_pending_payment
+		 * - void_authorization
+		 * - create_subscription
+		 * - cancel_subscription
+		 * - expire_subscription
+		 * - add_subscription_payment
+		 * - fail_subscription_payment
+		 */
 		do_action( 'gform_post_fail_subscription_payment', $entry, $action );
 		if ( has_filter( 'gform_post_fail_subscription_payment' ) ) {
 			$this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_post_fail_subscription_payment.' );
@@ -1120,7 +1291,7 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 	}
 
 	/**
-	 * Helper for making the gform_post_payment_action hook available to the various payment interaction methods
+	 * Helper for making the gform_post_payment_action hook available to the various payment interaction methods. Also handles sending notifications for payment events.
 	 *
 	 * @param array $entry
 	 * @param array $action
@@ -1130,7 +1301,14 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 		if ( has_filter( 'gform_post_payment_action' ) ) {
 			$this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_post_payment_action.' );
 		}
+
+		$form             = GFAPI::get_form( $entry['form_id'] );
+		$supported_events = $this->supported_notification_events( $form );
+		if ( ! empty( $supported_events ) ) {
+			GFAPI::send_notifications( $form, $entry, rgar( $action, 'type' ) );
+		}
 	}
+	
 
 	// -------- Cron --------------------
 	protected function setup_cron() {
@@ -1197,7 +1375,7 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 			return $this->requires_credit_card_message();
 		}
 
-		return false;
+		return parent::feed_list_message();
 	}
 
 	public function requires_credit_card_message() {
@@ -1230,7 +1408,7 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 							array( 'label' => esc_html__( 'Products and Services', 'gravityforms' ), 'value' => 'product' ),
 							array( 'label' => esc_html__( 'Subscription', 'gravityforms' ), 'value' => 'subscription' ),
 						),
-						'tooltip'  => '<h6>' . esc_html__( 'Transaction Type', 'gravityforms' ) . '</h6>' . esc_html__( 'Select a transaction type', 'gravityforms' )
+						'tooltip'  => '<h6>' . esc_html__( 'Transaction Type', 'gravityforms' ) . '</h6>' . esc_html__( 'Select a transaction type.', 'gravityforms' )
 					),
 				)
 			),
@@ -1273,7 +1451,7 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 						'label'   => esc_html__( 'Trial', 'gravityforms' ),
 						'type'    => 'trial',
 						'hidden'  => $this->get_setting( 'setupFee_enabled' ),
-						'tooltip' => '<h6>' . esc_html__( 'Trial Period', 'gravityforms' ) . '</h6>' . esc_html__( 'Enable a trial period.  The users recurring payment will not begin until after this trial period.', 'gravityforms' )
+						'tooltip' => '<h6>' . esc_html__( 'Trial Period', 'gravityforms' ) . '</h6>' . esc_html__( 'Enable a trial period.  The user\'s recurring payment will not begin until after this trial period.', 'gravityforms' )
 					),
 				)
 			),
@@ -2051,6 +2229,16 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 				)
 			),
 			array(
+				'handle'    => 'gaddon_token',
+				'src'       => $this->get_gfaddon_base_url() . "/js/gaddon_token{$min}.js",
+				'version'   => GFCommon::$version,
+				'deps'      => array( 'jquery' ),
+				'in_footer' => false,
+				'enqueue'   => array(
+					array( $this, 'enqueue_creditcard_token_script' )
+				)
+			),
+			array(
 				'handle'  => 'gform_form_admin',
 				'enqueue' => array(
 					array( 'admin_page' => array( 'entry_edit' ) ),
@@ -2060,7 +2248,134 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 
 		return array_merge( parent::scripts(), $scripts );
 	}
+	
+		
+	//----- Javascript Credit Card Tokens ----
+	/**
+	 * Override to support creating credit card tokens via Javascript.
+	 * 
+	 * @access public
+	 * @param mixed $form
+	 * @return array
+	 */
+	public function creditcard_token_info( $form ) {
+		
+		return array();
+		
+	}
+	
+	/**
+	 * Add input field for credit card token response.
+	 * 
+	 * @access public
+	 * @param string $content
+	 * @param array $field
+	 * @param string $value
+	 * @param string $entry_id
+	 * @param string $form_id
+	 * @return string
+	 */
+	public function add_creditcard_token_input( $content, $field, $value, $entry_id, $form_id ) {
+		
+		if ( ! $this->has_feed( $form_id ) || GFFormsModel::get_input_type( $field ) != 'creditcard' ) {
+			return $content;
+		}
+		
+		$form = GFAPI::get_form( $form_id );
+		if ( ! $this->creditcard_token_info( $form ) ) {
+			return $content;
+		}
+		
+		$slug     = str_replace( 'gravityforms', '', $this->_slug );
+		$content .= '<input type=\'hidden\' name=\'' . $slug . '_response\' id=\'gf_' . $slug . '_response\' value=\'' . rgpost( $slug . '_response' ) . '\' />';
+		
+		return $content;
+		
+	} 
 
+	/**
+	 * Enables AJAX for forms that create credit card tokens via Javascript.
+	 * 
+	 * @access public
+	 * @param array $args
+	 * @return array
+	 */
+	public function force_ajax_for_creditcard_tokens( $args ) {
+		
+		$form = GFAPI::get_form( rgar( $args, 'form_id' ) );
+		
+		$args['ajax'] = $this->enqueue_creditcard_token_script( $form ) ? true : $args['ajax'];
+		
+		return $args;
+		
+	}
+	
+	/**
+	 * Determines if GFToken script should be enqueued.
+	 * 
+	 * @access public
+	 * @param array $form
+	 * @return bool
+	 */
+	public function enqueue_creditcard_token_script( $form ) {
+		
+		return $form && $this->has_feed( $form['id'] ) && $this->creditcard_token_info( $form );
+		
+	}
+	
+	/**
+	 * Prepare Javascript for creating credit card tokens.
+	 * 
+	 * @access public
+	 * @param array $form
+	 * @param array $field_values
+	 * @param bool $is_ajax
+	 * @return void
+	 */
+	public function register_creditcard_token_script( $form, $field_values, $is_ajax ) {
+		
+		if ( ! $this->enqueue_creditcard_token_script( $form ) ) {
+			return;
+		}
+		
+		/* Prepare GFToken object. */
+		$gftoken = array(
+			'callback'      => 'GF_' . str_replace( ' ', '', $this->_short_title ),
+			'feeds'         => $this->creditcard_token_info( $form ),
+			'formId'        => rgar( $form, 'id' ),
+			'hasPages'      => GFCommon::has_pages( $form ),
+			'pageCount'     => GFFormDisplay::get_max_page_number( $form ),
+			'responseField' => '#gf_' . str_replace( 'gravityforms', '', $this->_slug ) . '_response'
+		);
+		
+		/* Get needed fields. */
+		$gftoken['fields'] = $this->get_creditcard_token_entry_fields( $gftoken['feeds'] );
+		
+		$script = 'new GFToken( ' . json_encode( $gftoken ) . ' );';
+		GFFormDisplay::add_init_script( $form['id'], 'GFToken', GFFormDisplay::ON_PAGE_RENDER, $script );
+
+	}
+	
+	/**
+	 * Get needed fields for creating credit card tokens.
+	 * 
+	 * @access public
+	 * @param array $feeds
+	 * @return array $fields
+	 */
+	public function get_creditcard_token_entry_fields( $feeds ) {
+		
+		$fields = array();
+		
+		foreach ( $feeds as $feed ) {
+			foreach ( $feed['billing_fields'] as $billing_field ) {
+				$fields[] = $billing_field;
+			}
+		}
+		 
+		return array_unique( $fields );
+		
+	}
 
 	//-------- Currency ----------------------
 	/**
@@ -2160,23 +2475,6 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 		}
 	}
 
-	//--------------- Notes ------------------
-	/**
-	 * Override this function to specify a custom avatar (i.e. the payment gateway logo) for entry notes created by the Add-On
-	 * @return  string - A fully qualified URL for the avatar
-	 */
-	public function note_avatar() {
-		return false;
-	}
-
-	public function notes_avatar( $avatar, $note ) {
-		if ( $note->user_name == $this->_short_title && empty( $note->user_id ) && $this->payment_method_is_overridden( 'note_avatar' ) ) {
-			$new_avatar = $this->note_avatar();
-		}
-
-		return empty( $new_avatar ) ? $avatar : "<img alt='{$this->_short_title}' src='{$new_avatar}' class='avatar avatar-48' height='48' width='48' />";
-	}
-
 
 	// # HELPERS
 
@@ -2186,16 +2484,6 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 
 	public function authorization_error( $error_message ) {
 		return array( 'error_message' => $error_message, 'is_success' => false, 'is_authorized' => false );
-	}
-
-	public function add_note( $entry_id, $note, $note_type = null ) {
-
-		$user_id   = 0;
-		$user_name = $this->_short_title;
-
-
-		GFFormsModel::add_note( $entry_id, $user_id, $user_name, $note, $note_type );
-
 	}
 
 	public function remove_spaces_from_card_number( $card_number ) {
@@ -2246,6 +2534,10 @@ class GFPaymentStatsTable extends WP_List_Table {
 
 	function no_items() {
 		esc_html_e( "There hasn't been any sales in the specified date range.", 'gravityforms' );
+	}
+
+	function get_columns() {
+		return $this->_column_headers[0];
 	}
 
 	function column_default( $item, $column ) {

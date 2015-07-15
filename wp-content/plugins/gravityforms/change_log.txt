@@ -1,6 +1,63 @@
 -------------------------------------------------------------------------------------------------------------------
-Version 1.9.11
+Version 1.9.12.1
+    - Added security enhancements.
 
+-------------------------------------------------------------------------------------------------------------------
+Version 1.9.12
+    - Added get started wizard to initial installation.
+	- Added accessibility improvement by changing the way field labels are hidden.
+	- Added Russian translation.
+    - Added support for line breaks when displaying entry notes.
+    - Added form specific version of gform_entry_post_save filter.
+    - Added 'minItemCount' parameter for repeater script.
+    - Added the datepicker to the date fields in the entry filters on the entry list, export page and add-on results pages.
+    - Added gf_do_action() to allow providing a list of modifiers for a action.
+        Example: gf_do_action( 'gform_batchbook_error', array( $form_id ), $feed, $entry, $form );
+	- Added the 'gform_disable_installation_status' filter for disabling display of the Installation Status section on the Forms > Settings page.
+	    add_filter( 'gform_disable_installation_status', '__return_true' );
+    - Updated tab labels in the form editor for the start paging and end paging fields.
+    - Updated some entry meta related strings to be translatable on the entries page column selector.
+    - Updated GFFormDisplay::get_max_page_number() to be a public method.
+    - Updated the list of currencies to display USD, GBP and EUR first.
+    - Updated repeater.addNewItem() to support manually adding an item.
+    - Updated repeater.removeItem() to support manually removing an item.
+    - Updated repeater script to support removing ALL items (and still adding new items back).
+    - Updated the gform_field_choice_markup_pre_render filter to include a field specific version and also to apply to select choices. See https://www.gravityhelp.com/documentation/article/gform_field_choice_markup_pre_render/
+    - Fixed typo in the form editor getting started steps.
+    - Fixed WP_List_Tables error in WordPress 4.3 for feed lists.
+    - Fixed a false positive being identified by some security scanners under certain conditions.
+    - Fixed WP_List_Tables error in WordPress 4.3 for Notifications lists, Confirmation lists and Payment Add-On sales results pages.
+    - Fixed minor grammar errors in Payment Add-On Framework.
+    - Fixed an issue with the number field where a placeholder with a percentage symbol will display incorrectly.
+    - Fixed an issue with the gform_entry_detail_title filter.
+    - Fixed notice in WP 4.3 with Widget constructor deprecation.
+    - Fixed an issue with the formatting of some negative values for the number field.
+    - Fixed an issue with the gform_disable_notification filter.
+    - Fixed an issue with the way GFFormsModel::create_lead() handled some multi-input field types.
+	- Fixed issue with special characters on drop down fields not allowing field to be maintained across pages in a multi-page form.
+    - Fixed a php warning related to the password field strength validation message.
+    - Fixed an issue with the saving of incomplete submissions and the credit card field.
+    - AF: Added GFFeedAddOn::supported_notification_events() to allow for custom notification events.
+    - AF: Added GFFeedAddOn::add_feed_error() for logging errors that occur during feed processing. Error is added to the error log and as an error note to the entry.
+    - AF: Added "gform_{slug}_error" and "gform_{slug}_error_{$form_id}" hook to allow actions to be taken when a feed error is added.
+	- AF: Added extra validation to select_custom settings field for when the field is required, the custom choice is selected and the custom value is blank.
+    - AF: Moved note helpers from GFFeedAddOn to GFAddOn.
+    - AF: Moved note helpers from GFPaymentAddOn to GFFeedAddOn.
+	- AF: Added support for can_create_feed() to Payment Add-On Framework.
+	- AF: Added "input_type" property to text settings field to change the type of the input field.
+    - AF: Added GFPaymentFeedAddOn::creditcard_token_info() to supply feed data to GFToken Javascript object for payment gateways that require creating charge tokens with Javascript.
+    - AF: Fixed an issue with GFFeedAddOn::maybe_process_feed() processing multiple feeds for GFPaymentAddOn based add-ons e.g. if conditional logic was not enabled on all the feeds.
+	- AF: Fixed select_custom settings field showing multiple validation errors when field was invalid.
+	- AF: Fixed an issue with GFFeedAddOn::has_feed() which caused it to return true even if feeds were inactive. Caused Stripe add-on front-end scripts to be included when not needed.
+	- AF: Fixed plugin settings save messages saying feed was(n't) updated when using the Feed Add-On Framework.
+	- AF: Fixed an issue on the uninstall page where the confirmation message does not get displayed in some cases.
+	- AF: Fixed a php notice when creating a new feed for some add-ons.
+	- AF: Fixed no field map choices being presented if field type is an empty array.
+    - API: Added support for the placeholder and cssClass properties to the entry filters.
+    - API: Added support for the datepicker in entry filters.
+
+-------------------------------------------------------------------------------------------------------------------
+Version 1.9.11
 	- Added some accessibility features.
     - Added 'gform_entries_field_header_pre_export', 'gform_entries_field_header_pre_export_{form_id}' and 'gform_entries_field_header_pre_export_{form_id}_{field_id}' filters for modifying the fields header in the entry export.
         add_filter( 'gform_entries_field_header_pre_export', function( $header, $form, $field ) {
