@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the iThemes Security Pro package.
 msgid ""
 msgstr ""
-"Project-Id-Version: iThemes Security Pro 1.16.0\n"
+"Project-Id-Version: iThemes Security Pro 1.16.1\n"
 "Report-Msgid-Bugs-To: http://ithemes.com/forum/\n"
-"POT-Creation-Date: 2015-07-06 18:41:49+00:00\n"
+"POT-Creation-Date: 2015-07-14 20:19:40+00:00\n"
 "PO-Revision-Date: 2015-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -4871,7 +4871,7 @@ msgid ""
 "last name."
 msgstr ""
 
-#. #-#-#-#-#  ithemes-security-pro.pot (iThemes Security Pro 1.16.0)  #-#-#-#-#
+#. #-#-#-#-#  ithemes-security-pro.pot (iThemes Security Pro 1.16.1)  #-#-#-#-#
 #. Plugin Name of the plugin/theme
 #: ithemes-security-pro.php:35
 msgid "iThemes Security Pro"

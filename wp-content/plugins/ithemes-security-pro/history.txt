@@ -521,3 +521,5 @@
 	Bug Fix: Enabling and disabling the "Remove File Writing Permissions" setting now updates the file permissions properly.
 	Bug Fix: Web servers that cannot be recognized now default to Apache.
 	Enhancement: Updated the hackrepair lists.
+1.16.1 - 2015-07-14 - Chris Jean
+	Enhancement: Updated link to iThemes support.
