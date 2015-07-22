@@ -40,3 +40,8 @@ add_action ('wp_enqueue_scripts', 'add_scripts');
 
 add_theme_support( 'menus' );
 register_nav_menu('main', 'Main Navigation Menu');
+
+add_action( 'after_setup_theme', 'woocommerce_support' );
+function woocommerce_support() {
+    add_theme_support( 'woocommerce' );
+}
