@@ -457,7 +457,7 @@ if ( jQuery( 'form[name="upgrade-themes"]' ).length ) {
 		if ( $action && in_array( $action, $supported_actions ) ) {
 
 			// should we be here?
-			if ( $action == 'activate' ) {
+			if ( $action == 'activate-products' ) {
 				check_admin_referer( 'wt-helper-activate-license', 'wt-helper-nonce' );
 			} else {
 				check_admin_referer( 'bulk-licenses' );
