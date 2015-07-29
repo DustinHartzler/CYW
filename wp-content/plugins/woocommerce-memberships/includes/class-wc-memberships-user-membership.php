@@ -378,7 +378,7 @@ class WC_Memberships_User_Membership {
 	 */
 	public function get_cancel_membership_url() {
 
-		$cancel_endpoint = get_permalink( wc_get_page_id( 'myaccount' ) );
+		$cancel_endpoint = SV_WC_Plugin_Compatibility::wc_get_page_permalink( 'myaccount' );
 
 		if ( false === strpos( $cancel_endpoint, '?' ) ) {
 			$cancel_endpoint = trailingslashit( $cancel_endpoint );
@@ -404,7 +404,7 @@ class WC_Memberships_User_Membership {
 	 */
 	public function get_renew_membership_url() {
 
-		$renew_endpoint = get_permalink( wc_get_page_id( 'myaccount' ) );
+		$renew_endpoint = SV_WC_Plugin_Compatibility::wc_get_page_permalink( 'myaccount' );
 
 		if ( false === strpos( $renew_endpoint, '?' ) ) {
 			$renew_endpoint = trailingslashit( $renew_endpoint );

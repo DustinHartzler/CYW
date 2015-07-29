@@ -4,8 +4,8 @@
  * Plugin URI: http://www.woothemes.com/products/woocommerce-memberships/
  * Description: Sell memberships that provide access to restricted content, products, discounts, and more!
  * Author: WooThemes / SkyVerge
- * Author URI: http://www.woothemes.com
- * Version: 1.0.3
+ * Author URI: http://www.woothemes.com/
+ * Version: 1.2.0
  * Text Domain: woocommerce-memberships
  * Domain Path: /i18n/languages/
  *
@@ -40,7 +40,7 @@ if ( ! class_exists( 'SV_WC_Framework_Bootstrap' ) ) {
 	require_once( plugin_dir_path( __FILE__ ) . 'lib/skyverge/woocommerce/class-sv-wc-framework-bootstrap.php' );
 }
 
-SV_WC_Framework_Bootstrap::instance()->register_plugin( '3.1.2', __( 'WooCommerce Memberships', 'woocommerce-memberships' ), __FILE__, 'init_woocommerce_memberships', array( 'minimum_wc_version' => '2.2', 'backwards_compatible' => '3.0.0' ) );
+SV_WC_Framework_Bootstrap::instance()->register_plugin( '4.0.0', __( 'WooCommerce Memberships', 'woocommerce-memberships' ), __FILE__, 'init_woocommerce_memberships', array( 'minimum_wc_version' => '2.2', 'backwards_compatible' => '4.0.0' ) );
 
 function init_woocommerce_memberships() {
 
@@ -54,7 +54,7 @@ class WC_Memberships extends SV_WC_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '1.0.3';
+	const VERSION = '1.2.0';
 
 	/** @var WC_Memberships single instance of this plugin */
 	protected static $instance;
@@ -195,9 +195,11 @@ class WC_Memberships extends SV_WC_Plugin {
 
 		require_once( $this->get_plugin_path() . '/includes/frontend/class-wc-memberships-frontend.php' );
 		require_once( $this->get_plugin_path() . '/includes/frontend/class-wc-memberships-checkout.php' );
+		require_once( $this->get_plugin_path() . '/includes/frontend/class-wc-memberships-restrictions.php' );
 
-		$this->frontend = new WC_Memberships_Frontend();
-		$this->checkout = new WC_Memberships_Checkout();
+		$this->frontend     = new WC_Memberships_Frontend();
+		$this->checkout     = new WC_Memberships_Checkout();
+		$this->restrictions = new WC_Memberships_Restrictions();
 	}
 
 
@@ -225,6 +227,12 @@ class WC_Memberships extends SV_WC_Plugin {
 
 		require_once( $this->get_plugin_path() . '/includes/class-wc-memberships-ajax.php' );
 		$this->ajax = new WC_Memberships_AJAX();
+
+		// checkout processes during Ajax request
+		if ( empty( $this->checkout ) ) {
+			require_once( $this->get_plugin_path() . '/includes/frontend/class-wc-memberships-checkout.php' );
+			$this->checkout = new WC_Memberships_Checkout();
+		}
 	}
 
 
@@ -323,7 +331,7 @@ class WC_Memberships extends SV_WC_Plugin {
 	 * This method is run also when an order is made manually in WC admin
 	 *
 	 * TODO: this should be refactored to separate the code that checks
-	 * if a given order contains a product that grants access to a membership
+	 * if a given order contains a product that grants access to a membership @MR June 2015
 	 *
 	 * @since 1.0.0
 	 * @param int $order_id Order ID
@@ -501,6 +509,30 @@ class WC_Memberships extends SV_WC_Plugin {
 
 
 	/**
+	 * Gets the plugin documentation URL
+	 *
+	 * @since 1.2.0
+	 * @see SV_WC_Plugin::get_documentation_url()
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'http://docs.woothemes.com/document/woocommerce-memberships/';
+	}
+
+
+	/**
+	 * Gets the plugin support URL
+	 *
+	 * @since 1.2.0
+	 * @see SV_WC_Plugin::get_support_url()
+	 * @return string
+	 */
+	public function get_support_url() {
+		return 'http://support.woothemes.com/';
+	}
+
+
+	/**
 	 * Search an array of arrays by key-value
 	 *
 	 * If a match is found in the array more than once,
@@ -575,6 +607,48 @@ class WC_Memberships extends SV_WC_Plugin {
 		}
 
 		return $next_timestamp;
+	}
+
+
+	/**
+	 * Creates a human readable list of an array
+	 *
+	 * @since 1.0.0
+	 * @param string[] $ranges array to list items of
+	 * @param string $conjunction optional. The word to join together the penultimate and last item. Defaults to 'or'
+	 * @return string 'item1, item2, item3 or item4'
+	 */
+	public function list_items( $items, $conjunction = null ) {
+
+		if ( ! $conjunction ) {
+			$conjunction = __( 'or', WC_Memberships::TEXT_DOMAIN );
+		}
+
+		array_splice( $items, -2, 2, implode( ' ' . $conjunction . ' ', array_slice( $items, -2, 2 ) ) );
+		return implode( ', ', $items );
+	}
+
+
+	/**
+	 * Return a list of edit post links for the provided posts
+	 *
+	 * @since 1.1.0
+	 * @param array Array of post objects
+	 * @return string
+	 */
+	public function admin_list_post_links( $posts ) {
+
+		if ( empty( $posts ) ) {
+			return '';
+		}
+
+		$items = array();
+
+		foreach ( $posts as $post ) {
+			$items[] = '<a href="' . get_edit_post_link( $post->ID ) . '">' . get_the_title( $post->ID ) . '</a>';
+		}
+
+		return $this->list_items( $items, __( 'and', WC_Memberships::TEXT_DOMAIN ) );
 	}
 
 
@@ -677,13 +751,32 @@ class WC_Memberships extends SV_WC_Plugin {
 	}
 
 
+	/**
+	 * Encode a variable into JSON via wp_json_encode() if available, fall back
+ 	 * to json_encode otherwise.
+	 *
+	 * json_encode() may fail and return `null` in some envrionments (esp. with
+	 * character encoding issues)
+	 *
+	 * @since 1.2.0
+	 * @param mixed $data    Variable (usually an array or object) to encode as JSON.
+	 * @param int   $options Optional. Options to be passed to json_encode(). Default 0.
+	 * @param int   $depth   Optional. Maximum depth to walk through $data. Must be greater than 0. Default 512.
+	 * @return bool|string   The JSON encoded string, or false if it cannot be encoded.
+	 */
+	public function wp_json_encode( $data, $options = 0, $depth = 512 ) {
+
+		return function_exists( 'wp_json_encode' ) ? wp_json_encode( $data, $options, $depth ) : json_encode( $data, $options, $depth );
+	}
+
+
 	/** Lifecycle methods ******************************************************/
 
 
 	/**
 	 * Install default settings & pages
 	 *
-	 * @since 1.0
+	 * @since 1.0.0
 	 * @see SV_WC_Plugin::install()
 	 */
 	protected function install() {
@@ -699,13 +792,56 @@ class WC_Memberships extends SV_WC_Plugin {
 		include_once( WC()->plugin_path() . '/includes/admin/settings/class-wc-settings-page.php' );
 		$settings = require_once( $this->get_plugin_path() . '/includes/admin/class-wc-memberships-settings.php' );
 
-		// install default settings
-		foreach ( $settings->get_settings() as $setting ) {
+		// install default settings for each section
+		foreach ( $settings->get_sections() as $section => $label ) {
 
-			if ( isset( $setting['default'] ) ) {
+			foreach ( $settings->get_settings( $section ) as $setting ) {
 
-				update_option( $setting['id'], $setting['default'] );
+				if ( isset( $setting['default'] ) ) {
+
+					update_option( $setting['id'], $setting['default'] );
+				}
 			}
+		}
+
+	}
+
+
+	/**
+	 * Upgrade
+	 *
+	 * @since 1.1.0
+	 * @see SV_WC_Plugin::install()
+	 */
+	protected function upgrade( $installed_version ) {
+
+		// upgrade to version 1.1.0
+		if ( version_compare( $installed_version, '1.1.0', '<' ) ) {
+
+			$all_rules = array();
+
+			// Merge rules from different options into a single option
+			foreach ( array( 'content_restriction', 'product_restriction', 'purchasing_discount' ) as $rule_type ) {
+				$rules = get_option( "wc_memberships_{$rule_type}_rules" );
+
+				if ( is_array( $rules ) && ! empty( $rules ) ) {
+
+					foreach ( $rules as $rule ) {
+
+						// Skip empty/corrupt rules
+						if ( empty( $rule ) || isset( $rule[0] ) && ! $rule[0] ) {
+							continue;
+						}
+
+						$rule['rule_type'] = $rule_type;
+						$all_rules[] = $rule;
+					}
+				}
+
+				delete_option( "wc_memberships_{$rule_type}_rules" );
+			}
+
+			update_option( 'wc_memberships_rules', $all_rules );
 		}
 	}
 

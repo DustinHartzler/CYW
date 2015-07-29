@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  */
 ?>
 
-<table class="widefat rules product-restriction-rules">
+<table class="widefat rules product-restriction-rules js-rules">
 
 	<thead>
 		<tr>

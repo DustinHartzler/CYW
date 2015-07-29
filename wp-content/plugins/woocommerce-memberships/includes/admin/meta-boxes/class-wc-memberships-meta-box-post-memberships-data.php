@@ -102,7 +102,8 @@ class WC_Memberships_Meta_Box_Post_Memberships_Data extends WC_Memberships_Meta_
 		);
 
 		// Get applied restriction rules
-		$content_restriction_rules = wc_memberships()->rules->get_rules( 'content_restriction', array(
+		$content_restriction_rules = wc_memberships()->rules->get_rules( array(
+			'rule_type'         => 'content_restriction',
 			'object_id'         => $post->ID,
 			'content_type'      => 'post_type',
 			'content_type_name' => $post->post_type,
@@ -112,7 +113,8 @@ class WC_Memberships_Meta_Box_Post_Memberships_Data extends WC_Memberships_Meta_
 
 		// Add empty option to create a HTML template for new rules
 		$membership_plan_ids = array_keys( $membership_plan_options );
-		$content_restriction_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( 'content_restriction', array(
+		$content_restriction_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( array(
+			'rule_type'          => 'content_restriction',
 			'object_ids'         => array( $post->ID ),
 			'id'                 => '',
 			'membership_plan_id' => array_shift( $membership_plan_ids ),
@@ -123,25 +125,37 @@ class WC_Memberships_Meta_Box_Post_Memberships_Data extends WC_Memberships_Meta_
 		?>
 		<h4><?php esc_html_e( 'Content Restriction' ); ?></h4>
 
-		<?php require( wc_memberships()->get_plugin_path() . '/includes/admin/meta-boxes/views/html-content-restriction-rules.php' ); ?>
-
-		<h4><?php esc_html_e( 'Custom Restriction Message' ); ?></h4>
-
 		<?php woocommerce_wp_checkbox( array(
-			'id'          => '_wc_memberships_use_custom_content_restricted_message',
-			'class'       => 'js-toggle-custom-message',
-			'label'       => __( 'Use custom message', WC_Memberships::TEXT_DOMAIN ),
-			'description' => __( 'Check this box if you want to customize the content restricted message for this content.', WC_Memberships::TEXT_DOMAIN )
+			'id'          => '_wc_memberships_force_public',
+			'class'       => 'js-toggle-rules',
+			'label'       => __( 'Disable restrictions', WC_Memberships::TEXT_DOMAIN ),
+			'description' => __( 'Check this box if you want to force the content to be public regardless of any restriction rules that may apply now or in the future.', WC_Memberships::TEXT_DOMAIN ),
 		) ); ?>
 
-		<div class="js-custom-message-editor-container <?php if ( get_post_meta( $post->ID, '_wc_memberships_use_custom_content_restricted_message', true ) !== 'yes' ) : ?>hide<?php endif; ?>">
-		<?php
-		$message = get_post_meta( $post->ID, '_wc_memberships_content_restricted_message', true );
-		wp_editor( $message, '_wc_memberships_content_restricted_message', array(
-			'textarea_rows' => 5,
-			'teeny'         => true,
-		) );
-		?>
+		<div class="js-restrictions <?php if ( get_post_meta( $post->ID, '_wc_memberships_force_public', true ) == 'yes' ) : ?>hide<?php endif; ?>">
+
+			<?php require( wc_memberships()->get_plugin_path() . '/includes/admin/meta-boxes/views/html-content-restriction-rules.php' ); ?>
+
+			<h4><?php esc_html_e( 'Custom Restriction Message' ); ?></h4>
+
+			<?php woocommerce_wp_checkbox( array(
+				'id'          => '_wc_memberships_use_custom_content_restricted_message',
+				'class'       => 'js-toggle-custom-message',
+				'label'       => __( 'Use custom message', WC_Memberships::TEXT_DOMAIN ),
+				'description' => __( 'Check this box if you want to customize the content restricted message for this content.', WC_Memberships::TEXT_DOMAIN ),
+			) ); ?>
+
+			<div class="js-custom-message-editor-container <?php if ( get_post_meta( $post->ID, '_wc_memberships_use_custom_content_restricted_message', true ) !== 'yes' ) : ?>hide<?php endif; ?>">
+			<?php
+			$message = get_post_meta( $post->ID, '_wc_memberships_content_restricted_message', true );
+						echo '<p>' . sprintf( __( '<code>%s</code> automatically inserts the product(s) needed to gain access. <code>%s</code> inserts the URL to my account page. HTML is allowed.', WC_Memberships::TEXT_DOMAIN ), '{products}', '{login_url}' ) . '</p>';
+			wp_editor( $message, '_wc_memberships_content_restricted_message', array(
+				'textarea_rows' => 5,
+				'teeny'         => true,
+			) );
+			?>
+			</div>
+
 		</div>
 
 		<?php
@@ -160,6 +174,8 @@ class WC_Memberships_Meta_Box_Post_Memberships_Data extends WC_Memberships_Meta_
 		// Update restriction rules
 		wc_memberships()->admin->update_rules( $post_id, array( 'content_restriction' ), 'post' );
 		wc_memberships()->admin->update_custom_message( $post_id, array( 'content_restricted' ) );
+
+		update_post_meta( $post_id, '_wc_memberships_force_public', isset( $_POST[ '_wc_memberships_force_public' ] ) ? 'yes' : 'no' );
 	}
 
 

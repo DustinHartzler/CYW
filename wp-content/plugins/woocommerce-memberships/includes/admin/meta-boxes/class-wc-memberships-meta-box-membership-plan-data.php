@@ -146,7 +146,8 @@ class WC_Memberships_Meta_Box_Membership_Plan_Data extends WC_Memberships_Meta_B
 		$content_restriction_rules = $membership_plan->get_content_restriction_rules();
 
 		// Add empty option to create a HTML template for new rules
-		$content_restriction_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( 'content_restriction', array(
+		$content_restriction_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( array(
+			'rule_type'                     => 'content_restriction',
 			'membership_plan_id'            => $post->ID,
 			'id'                            => '',
 			'content_type'                  => '',
@@ -185,7 +186,8 @@ class WC_Memberships_Meta_Box_Membership_Plan_Data extends WC_Memberships_Meta_B
 		$product_restriction_rules = $membership_plan->get_product_restriction_rules();
 
 		// Add empty option to create a HTML template for new rules
-		$product_restriction_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( 'product_restriction', array(
+		$product_restriction_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( array(
+			'rule_type'                     => 'product_restriction',
 			'membership_plan_id'            => $post->ID,
 			'id'                            => '',
 			'content_type'                  => '',
@@ -206,7 +208,8 @@ class WC_Memberships_Meta_Box_Membership_Plan_Data extends WC_Memberships_Meta_B
 		$purchasing_discount_rules = $membership_plan->get_purchasing_discount_rules();
 
 		// Add empty option to create a HTML template for new rules
-		$purchasing_discount_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( 'purchasing_discount', array(
+		$purchasing_discount_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( array(
+			'rule_type'          => 'purchasing_discount',
 			'membership_plan_id' => $post->ID,
 			'id'                 => '',
 			'content_type'       => '',
@@ -216,6 +219,7 @@ class WC_Memberships_Meta_Box_Membership_Plan_Data extends WC_Memberships_Meta_B
 			'discount_amount'    => '',
 			'active'             => '',
 		));
+
 		?>
 
 		<div class="panel-wrap data">
@@ -296,7 +300,7 @@ class WC_Memberships_Meta_Box_Membership_Plan_Data extends WC_Memberships_Meta_B
 							}
 						}
 
-						echo esc_attr( json_encode( $json_ids ) );
+						echo esc_attr( wc_memberships()->wp_json_encode( $json_ids ) );
 					?>" value="<?php echo esc_attr( implode( ',', array_keys( $json_ids ) ) ); ?>" />
 				<?php else : ?>
 					<select id="_product_ids" id="_product_ids" name="_product_ids[]" class="ajax_chosen_select_products js-ajax-select-products" multiple="multiple" data-placeholder="<?php esc_attr_e( 'Search for a product&hellip;', WC_Memberships::TEXT_DOMAIN ); ?>">
@@ -368,6 +372,10 @@ class WC_Memberships_Meta_Box_Membership_Plan_Data extends WC_Memberships_Meta_B
 					<?php require( wc_memberships()->get_plugin_path() . '/includes/admin/meta-boxes/views/html-content-restriction-rules.php' ); ?>
 				</div>
 
+				<?php if ( $public_posts = wc_memberships()->rules->get_public_posts() ) : ?>
+					<p><?php printf( __( 'These posts are public, and will be excluded from all restriction rules: %s', WC_Memberships::TEXT_DOMAIN ), wc_memberships()->admin_list_post_links( $public_posts ) ); ?></p>
+				<?php endif; ?>
+
 				<?php
 					/**
 					 * Fires after the membership plan content restriction panel is displayed
@@ -384,6 +392,10 @@ class WC_Memberships_Meta_Box_Membership_Plan_Data extends WC_Memberships_Meta_B
 				<div class="table-wrap">
 					<?php require( wc_memberships()->get_plugin_path() . '/includes/admin/meta-boxes/views/html-product-restriction-rules.php' ); ?>
 				</div>
+
+				<?php if ( $public_products = wc_memberships()->rules->get_public_products() ) : ?>
+					<p><?php printf( __( 'These products are public, and will be excluded from all restriction rules: %s', WC_Memberships::TEXT_DOMAIN ), wc_memberships()->admin_list_post_links( $public_products ) ); ?></p>
+				<?php endif; ?>
 
 				<?php
 					/**
@@ -441,7 +453,7 @@ class WC_Memberships_Meta_Box_Membership_Plan_Data extends WC_Memberships_Meta_B
 		// Save product IDs that grant access to this membership
 		if ( isset( $_POST['_product_ids'] ) ) {
 
-			$product_ids = is_array( $_POST['_product_ids'] ) ? $_POST['_product_ids'] : ( $_POST['_product_ids'] ) ? explode( ',', $_POST['_product_ids'] ) : array();
+			$product_ids = is_array( $_POST['_product_ids'] ) ? $_POST['_product_ids'] : ( $_POST['_product_ids'] ? explode( ',', $_POST['_product_ids'] ) : array() );
 
 			// sanitize
 			$product_ids = array_map( 'absint', $product_ids );

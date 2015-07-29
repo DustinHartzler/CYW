@@ -187,30 +187,30 @@ class WC_Memberships_Membership_Plan {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $ruleset Ruleset type. One of 'content_restriction', 'product_restriction' or 'purchasing_discount'.
+	 * @param string $rule_type Rule type. One of 'content_restriction', 'product_restriction' or 'purchasing_discount'.
 	 * @return array|bool $rules Array of rules or false on error
 	 */
-	private function get_rules( $ruleset ) {
+	private function get_rules( $rule_type ) {
 
-		if ( ! isset( $this->rules[ $ruleset ] ) ) {
+		if ( ! isset( $this->rules[ $rule_type ] ) ) {
 
-			$all_rules = get_option( 'wc_memberships_' . $ruleset . '_rules' );
-			$this->rules[ $ruleset ] = array();
+			$all_rules = get_option( 'wc_memberships_rules' );
+			$this->rules[ $rule_type ] = array();
 
 			if ( ! empty( $all_rules ) ) {
 
 				foreach ( $all_rules as $rule ) {
 
-					$rule = new WC_Memberships_Membership_Plan_Rule( $ruleset, $rule );
+					$rule = new WC_Memberships_Membership_Plan_Rule( $rule );
 
-					if ( $rule->get_membership_plan_id() == $this->get_id() ) {
-						$this->rules[ $ruleset ][] = $rule;
+					if ( $rule_type == $rule->get_rule_type() && $rule->get_membership_plan_id() == $this->get_id() ) {
+						$this->rules[ $rule_type ][] = $rule;
 					}
 				}
 			}
 		}
 
-		return $this->rules[ $ruleset ];
+		return $this->rules[ $rule_type ];
 	}
 
 

@@ -1173,12 +1173,12 @@ class WC_Memberships_Integration_Subscriptions {
 	public function output_exclude_trial_option( $rule, $index ) {
 
 		$has_subscription = $rule->get_membership_plan_id() ? $this->has_membership_plan_subscription( $rule->get_membership_plan_id() ): false;
-		$type             = $rule->get_type();
+		$type             = $rule->get_rule_type();
 		?>
 
 		<span class="rule-control-group rule-control-group-access-schedule-trial <?php if ( ! $has_subscription ) : ?>hide<?php endif; ?> js-show-if-has-subscription">
 
-			<input type="checkbox" name="_<?php echo $type; ?>_rules[<?php echo $index; ?>][access_schedule_exclude_trial]" id="_<?php echo $type; ?>_rules_<?php echo $index; ?>_access_schedule_exclude_trial" value="yes" <?php checked( $rule->get_access_schedule_exclude_trial(), 'yes' ); ?> class="access_schedule-exclude-trial" />
+			<input type="checkbox" name="_<?php echo $type; ?>_rules[<?php echo $index; ?>][access_schedule_exclude_trial]" id="_<?php echo $type; ?>_rules_<?php echo $index; ?>_access_schedule_exclude_trial" value="yes" <?php checked( $rule->get_access_schedule_exclude_trial(), 'yes' ); ?> class="access_schedule-exclude-trial" <?php if ( ! $rule->current_user_can_edit() ) : ?>disabled<?php endif; ?> />
 			<label for="_<?php echo $type; ?>_rules_<?php echo $index; ?>_access_schedule_exclude_trial" class="label-checkbox">
 				<?php _e( 'Start after trial', WC_Memberships::TEXT_DOMAIN ); ?>
 			</label>

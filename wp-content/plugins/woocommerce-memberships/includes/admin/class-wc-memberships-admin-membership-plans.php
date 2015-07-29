@@ -102,6 +102,23 @@ class WC_Memberships_Admin_Membership_Plans {
 		// Remove quick edit action
 		unset( $actions['inline hide-if-no-js'] );
 
+		$plan = wc_memberships_get_membership_plan( $post );
+
+		if ( $plan->has_active_memberships() && isset( $actions['trash'] ) ) {
+
+			if ( 'trash' == $post->post_status ) {
+				$tip = esc_attr__( 'This item cannot be restored because it has active members.', WC_Memberships::TEXT_DOMAIN );
+			}
+			elseif ( EMPTY_TRASH_DAYS ) {
+				$tip = esc_attr__( 'This item cannot be moved to trash because it has active members.', WC_Memberships::TEXT_DOMAIN );
+			}
+			if ( 'trash' == $post->post_status || ! EMPTY_TRASH_DAYS ) {
+				$tip = esc_attr__( 'This item cannot be permanently deleted because it has active members.', WC_Memberships::TEXT_DOMAIN );
+			}
+
+			$actions['trash'] = '<span title="' . $tip . '" style="cursor: help;">' . strip_tags( $actions['trash'] ) . '</span>';
+		}
+
 		// Add duplicate action
 		$actions['duplicate'] = '<a href="' . wp_nonce_url( admin_url( 'edit.php?post_type=wc_membership_plan&action=duplicate_plan&amp;post=' . $post->ID ), 'wc-memberships-duplicate-plan_' . $post->ID ) . '" title="' . __( 'Make a duplicate from this membership plan', WC_Memberships::TEXT_DOMAIN )
 			. '" rel="permalink">' .  __( 'Duplicate', WC_Memberships::TEXT_DOMAIN ) . '</a>';
@@ -514,32 +531,23 @@ class WC_Memberships_Admin_Membership_Plans {
 	 */
 	private function duplicate_plan_rules( $id, $new_id ) {
 
-		$rulesets = array( 'content_restriction', 'product_restriction', 'purchasing_discount' );
+		$rules = get_option( 'wc_memberships_rules' );
+		$new_rules = array();
 
-		foreach ( $rulesets as $ruleset ) {
+		foreach ( $rules as $key => $rule ) {
 
-			$rules = (array) wc_memberships()->rules->get_rules( $ruleset );
-			$count = count( $rules );
+			// Copy rules to new plan
+			if ( $rule['membership_plan_id'] == $id ) {
 
-			foreach ( $rules as $key => $rule ) {
+				$new_rule = $rule;
+				$new_rule['id'] = uniqid( 'rule_' );
+				$new_rule['membership_plan_id'] = $new_id;
 
-				// Convert rule objects back to arrays, because that's just easier to work with
-				$rules[ $key ] = $rule->get_raw_data();
-
-				// Copy rules to new plan
-				if ( $rule->get_membership_plan_id() == $id ) {
-
-					$new_rule = $rule->get_raw_data();
-					$new_rule['id'] = uniqid( 'rule_' );
-					$new_rule['membership_plan_id'] = $new_id;
-
-					$rules[ $count ] = $new_rule;
-					$count++;
-				}
+				$new_rules[] = $new_rule;
 			}
-
-			update_option( 'wc_memberships_' . $ruleset . '_rules', $rules );
 		}
+
+		update_option( 'wc_memberships_rules', array_merge( $rules, $new_rules ) );
 	}
 
 

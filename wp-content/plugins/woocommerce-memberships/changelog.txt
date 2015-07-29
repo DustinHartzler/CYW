@@ -1,5 +1,32 @@
 *** WooCommerce Memberships Changelog ***
 
+2015.07.28 - version 1.2.0
+ * Fix - JSON encoding issues in some environments
+ * Fix - Membership Plan data tabs went missing in WooCommerce 2.2, we've brought them back :)
+ * Fix - Properly highlight WooCommerce menu when viewing/editing membership plans
+ * Misc - WooCommerce 2.4 Compatibility
+
+2015.07.21 - version 1.1.1
+ * Fix - Fix error message when saving a membership plan without any associated rules
+ * Fix - Fix disappearing "Product Category" taxonomy option for product restrictions and discounts
+ * Fix - wcm_restrict shortcode properly defaults to all plans
+ * Fix - Purchasing discounts that apply to product categories now properly discounts variable products
+ * Fix - Purchasing discounts that apply to variable products now properly discounts product variations
+ * Fix - More specific restriction rules properly override less specific ones
+
+2015.07.08 - version 1.1.0
+ * Feature - Restriction rules can be overridden on a per-post basis to make individual posts public
+ * Feature - Adds wcm_nonmember shortcode to show content only to non-members
+ * Tweak - The admin bar is now shown with User Switching test users to make switching back easier
+ * Tweak - Improved messaging around trashing plans and deleting disabled restriction rules
+ * Tweak - Refactored and simplified rules structure for improved performance and reliability
+ * Fix - When hiding products the product count is now correct both in the shop loop and in searches
+ * Fix - wcm_restrict shortcode now accepts other shortcodes in restricted content
+ * Fix - Membership notes are correctly hidden in the dashboard comments widget and comments table
+ * Fix - Thumbnails for delayed access products are properly hidden in certain situations
+ * Fix - Product restricted messages for members are now correctly displayed instead of delayed access messages
+ * Fix - Properly create an account for a guest customer when checking out with a membership-granting product
+
 2015.06.29 - version 1.0.3
  * Fix - Memberships tabs no longer try to sneak into other screens :)
  * Fix - Discount inputs no longer force a whole-dollar amount and respect .01 increments

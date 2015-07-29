@@ -498,7 +498,8 @@ class WC_Memberships_User_Memberships {
 	public function exclude_membership_notes( $clauses ) {
 		global $wpdb, $typenow;
 
-		if ( is_admin() && $typenow = 'wc_user_membership' && current_user_can( 'manage_woocommerce' ) ) {
+
+		if ( is_admin() && $typenow == 'wc_user_membership' && current_user_can( 'manage_woocommerce' ) ) {
 			return $clauses; // Don't hide when viewing user memberships in admin
 		}
 
@@ -515,6 +516,7 @@ class WC_Memberships_User_Memberships {
 		}
 
 		$clauses['where'] .= " $wpdb->posts.post_type <> 'wc_user_membership' ";
+
 		return $clauses;
 	}
 

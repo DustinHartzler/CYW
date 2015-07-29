@@ -35,7 +35,7 @@ class WC_Memberships_Rules {
 
 
 	/** @var array helper for lazy rules getter */
-	private $rules = array();
+	private $rules;
 
 
 	/**
@@ -54,34 +54,24 @@ class WC_Memberships_Rules {
 	 * General rules builder & getter.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @param string $ruleset Ruleset type. One of 'content_restriction', 'product_restriction' or 'purchasing_discount'.
-	 * @param array $args {
-	 *   Optional. An array of arguments.
-	 *
+	 * @param array $args Optional. An array of arguments
+	 * {
+	 *   @type string|array $rule_type Optional. Rule type. One or more of 'content_restriction', 'product_restriction' or 'purchasing_discount'
 	 *   @type string $content_type Optional. Content type. One of 'post_type' or 'taxonomy'
 	 *   @type string $content_type_name Optional. Content type name. A valid post type or taxonomy name.
 	 *   @type string|int $id Optional. Post or taxonomy term ID/slug
-	 *   @type bool $exclude_inherited Optional. Whether to exclude inherited rules
-	 *                                 (from post type or taxonomy) when requesting
-	 *                                 rules for a specific post.
-	 *   @type bool $include_specific Optional. Whether to include specific (child)
-	 *                                rules for specific objects, when querying for
-	 *                                wide/general rules. When true, will include for example,
-	 *                                term-specific rules when requesting for taxonomy rules.
-	 *   @type mixed $plan_status Optional. Filter rules by plan status. Either a single plan status,
-	 *                            array of statuses or 'any' for any status.
+	 *   @type bool $exclude_inherited Optional. Whether to exclude inherited rules (from post type or taxonomy) when requesting rules for a specific post.
+	 *   @type bool $include_specific Optional. Whether to include specific (child) rules for specific objects, when querying forwide/general rules. When true, will include for example, term-specific rules when requesting for taxonomy rules.
+	 *   @type mixed $plan_status Optional. Filter rules by plan status. Either a single plan status, array of statuses or 'any' for any status.
 	 * }
 	 * @return array|bool $rules Array of rules or false on error
 	 */
-	public function get_rules( $ruleset, $args = array() ) {
+	public function get_rules( $args = array() ) {
 
-		// Bail out if no ruleset is specified, or ruleset is invalid/not supported
-		if ( ! $ruleset || ! in_array( $ruleset, array( 'content_restriction', 'product_restriction', 'purchasing_discount' ) ) ) {
-			return false;
-		}
+		$valid_rule_types = array( 'content_restriction', 'product_restriction', 'purchasing_discount' );
 
 		$defaults = array(
+			'rule_type'          => $valid_rule_types,
 			'content_type'       => null,
 			'content_type_name'  => null,
 			'object_id'          => null,
@@ -92,30 +82,47 @@ class WC_Memberships_Rules {
 
 		$args = wp_parse_args( $args, $defaults );
 
+		if ( $args['rule_type'] && ! is_array( $args['rule_type'] ) ) {
+			$args['rule_type'] = (array) $args['rule_type'];
+		}
+
 		// Bail out if object id or content type name is provided, but content type itself is missing
 		if ( ( $args['object_id'] || $args['content_type_name'] ) && ! $args['content_type'] ) {
 			return false;
 		}
 
 		// Build rules for the first time
-		if ( ! isset( $this->rules[ $ruleset ] ) ) {
+		if ( ! isset( $this->rules ) ) {
 
-			$this->rules[ $ruleset ] = array(
+			$this->rules = array(
 				'all'     => array(),
 				'applied' => array(),
 			);
 
-			$rules = (array) get_option( 'wc_memberships_' . $ruleset . '_rules' );
+			$rules = get_option( 'wc_memberships_rules' );
 
-			foreach ( $rules as $rule ) {
+			if ( is_array( $rules ) && ! empty( $rules ) ) {
+				foreach ( $rules as $rule ) {
 
-				$this->rules[ $ruleset ]['all'][] = new WC_Memberships_Membership_Plan_Rule( $ruleset, (array) $rule );
+					$this->rules['all'][] = new WC_Memberships_Membership_Plan_Rule( (array) $rule );
+				}
 			}
 		}
 
-		// If no content type is specified, return all rules
+		// If no content type is specified, return all rules that match the rule type(s)
 		if ( ! $args['content_type'] ) {
-			return $this->rules[ $ruleset ]['all'];
+
+			$rules = array();
+
+			if ( ! empty( $this->rules['all'] ) ) {
+				foreach ( $this->rules['all'] as $rule ) {
+					if ( in_array( $rule->get_rule_type(), $args['rule_type'] ) ) {
+						$rules[] = $rule;
+					}
+				}
+			}
+
+			return $rules;
 		}
 
 		// Normalize object ID
@@ -151,21 +158,25 @@ class WC_Memberships_Rules {
 			$args['object_id'] = absint( $args['object_id'] );
 		}
 
-
 		// Unique key for caching the applied rule results
 		$applied_rule_key = http_build_query( $args );
 
 		// Structurize the rules that apply to specific content types or objects
-		if ( ! isset( $this->rules[ $ruleset ]['applied'][ $applied_rule_key ] ) ) {
+		if ( ! isset( $this->rules['applied'][ $applied_rule_key ] ) ) {
 
-			$this->rules[ $ruleset ]['applied'][ $applied_rule_key ] = array();
+			$this->rules['applied'][ $applied_rule_key ] = array();
 
-			foreach ( $this->rules[ $ruleset ]['all'] as $key => $rule ) {
+			foreach ( $this->rules['all'] as $key => $rule ) {
+
+				// Skip rules that don't match the rule type
+				if ( ! in_array( $rule->get_rule_type(), $args['rule_type'] ) ) {
+					continue;
+				}
 
 				$apply_rule  = false;
 				$plan_status = get_post_status( $rule->get_membership_plan_id() );
 
-				// Check if the memberhip plan of this rule matches the requested status
+				// Check if the membership plan of this rule matches the requested status
 				if ( is_array( $args['plan_status'] ) ) {
 					$matches_plan_status = in_array( $plan_status, $args['plan_status'] );
 				} else if ( in_array( $args['plan_status'], array( 'any', 'all' ) ) ) {
@@ -185,7 +196,6 @@ class WC_Memberships_Rules {
 					$no_object_id_match         = ! $args['object_id'] && empty( $rule_object_ids );
 					$no_content_type_name_match = ! $args['content_type_name'] && ! $rule->get_content_type_name();
 
-
 					// No object_id & content type name, but content type matches
 					if ( ( ( $no_object_id_match && $no_content_type_name_match ) || ( ! $no_object_id_match && ! $no_content_type_name_match && $args['include_specific'] ) ) && $matches_content_type ) {
 						$apply_rule = true;
@@ -197,6 +207,10 @@ class WC_Memberships_Rules {
 					// Object ID, content type & name match
 					else if ( $args['object_id'] && $matches_object_id && $matches_content_type && $matches_content_type_name ) {
 						$apply_rule = true;
+					}
+					// special handling for purchasing discounts that apply to variable products
+					else if ( in_array( 'purchasing_discount', $args['rule_type'] ) && $args['object_id'] && $matches_content_type && $matches_content_type_name && 'product_variation' === get_post_type( $args['object_id'] ) ) {
+						$apply_rule = $rule->applies_to( 'object_id', wp_get_post_parent_id( $args['object_id'] ) );
 					}
 
 					// Handle rule inheritance. For example, rules that apply to a taxonomy
@@ -214,9 +228,25 @@ class WC_Memberships_Rules {
 									// Does the requested post have any of the terms specified in the rule?
 									if ( ! empty( $rule_object_ids ) ) {
 
+										$tax       = $rule->get_content_type_name();
+										$taxonomy  = get_taxonomy( $tax );
+										$object_id = $args['object_id'];
+
+										// special handling for purchasing discounts that apply to product categories -- the product_cat taxonomy does not
+										// include the product_variation as an object type, nor do any product_variation posts have product_cat terms so
+										// use use the parent (variable) product when checking if the rule applies
+										if ( in_array( 'purchasing_discount', $args['rule_type'] ) && $rule->applies_to( 'content_type_name', 'product_cat' ) &&  'product_variation' === get_post_type( $object_id ) ) {
+											$object_id = wp_get_post_parent_id( $object_id );
+										}
+
+										// Skip if the term taxonomy does not apply to the post type
+										if ( ! in_array( get_post_type( $object_id ), (array) $taxonomy->object_type ) ) {
+											break;
+										}
+
 										foreach ( $rule_object_ids as $term_id ) {
 
-											if ( has_term( $term_id, $rule->get_content_type_name(), $args['object_id'] ) ) {
+											if ( has_term( $term_id, $rule->get_content_type_name(), $object_id ) ) {
 
 												$apply_rule = true;
 												break;
@@ -228,11 +258,21 @@ class WC_Memberships_Rules {
 									// particular taxonomy?
 									else {
 
-										$terms = get_the_terms( $args['object_id'], $rule->get_content_type_name() );
+										$tax      = $rule->get_content_type_name();
+										$taxonomy = get_taxonomy( $tax );
 
-										if ( ! empty( $terms ) ) {
-											$apply_rule = true;
+										// Sanity check: is the taxonomy currently registered for the
+										// post type? get_the_terms does not care about this, so we need
+										// to make sure we do!
+										if ( in_array( get_post_type( $args['object_id'] ), (array) $taxonomy->object_type ) ) {
+
+											$terms = get_the_terms( $args['object_id'], $tax );
+
+											if ( ! empty( $terms ) ) {
+												$apply_rule = true;
+											}
 										}
+
 									}
 
 								}
@@ -265,7 +305,7 @@ class WC_Memberships_Rules {
 
 					// Rule order key
 					$rule->set_rule_key( $key );
-					$this->rules[ $ruleset ]['applied'][ $applied_rule_key ][] = $rule;
+					$this->rules['applied'][ $applied_rule_key ][] = $rule;
 				}
 
 			} // endforeach
@@ -273,7 +313,7 @@ class WC_Memberships_Rules {
 		} // endif
 
 		// Return rules for specific content types or objects
-		return $this->rules[ $ruleset ]['applied'][ $applied_rule_key ];
+		return $this->rules['applied'][ $applied_rule_key ];
 	}
 
 
@@ -281,14 +321,13 @@ class WC_Memberships_Rules {
 	 * Get content restriction rules
 	 *
 	 * @since 1.0.0
-	 *
 	 * @see WC_Memberships::get_rules()
-	 *
 	 * @param array $args associative array of arguments
 	 * @return array|bool $rules Array of rules or false on error
 	 */
 	public function get_content_restriction_rules( $args = array() ) {
-		return $this->get_rules( 'content_restriction', $args );
+		$args['rule_type'] = 'content_restriction';
+		return $this->get_rules( $args );
 	}
 
 
@@ -296,7 +335,6 @@ class WC_Memberships_Rules {
 	 * Get content restriction rules for a post
 	 *
 	 * @since 1.0.0
-	 *
 	 * @param int $post_id Post ID
 	 * @return array|bool $rules Array of rules or false on error
 	 */
@@ -314,7 +352,6 @@ class WC_Memberships_Rules {
 	 * Get content restriction rules for a taxonomy
 	 *
 	 * @since 1.0.0
-	 *
 	 * @param string $taxonomy Taxonomy name
 	 * @return array|bool $rules Array of rules or false on error
 	 */
@@ -331,7 +368,6 @@ class WC_Memberships_Rules {
 	 * Get content restriction rules for a taxonomy term
 	 *
 	 * @since 1.0.0
-	 *
 	 * @param string $taxonomy Taxonomy name
 	 * @param string|int $term_id Term ID or slug
 	 * @return array|bool $rules Array of rules or false on error
@@ -350,7 +386,6 @@ class WC_Memberships_Rules {
 	 * Get content restriction rules for a post type
 	 *
 	 * @since 1.0.0
-	 *
 	 * @param string $post_type Post type name
 	 * @return array|bool $rules Array of rules or false on error
 	 */
@@ -369,7 +404,6 @@ class WC_Memberships_Rules {
 	 * @since 1.0.0
 	 *
 	 * @see WC_Memberships::get_rules()
-	 *
 	 * @param array $args Associative array of arguments
 	 * @return array|bool $rules Array of rules or false on error
 	 */
@@ -388,7 +422,9 @@ class WC_Memberships_Rules {
 			$args['content_type_name'] = 'product';
 		}
 
-		return $this->get_rules( 'product_restriction', $args );
+		$args['rule_type'] = 'product_restriction';
+
+		return $this->get_rules( $args );
 	}
 
 
@@ -396,9 +432,7 @@ class WC_Memberships_Rules {
 	 * Get product restriction rules for a product
 	 *
 	 * @since 1.0.0
-	 *
 	 * @see WC_Memberships::get_rules()
-	 *
 	 * @param int $product_id Product ID
 	 * @return array|bool $rules Array of rules or false on error
 	 */
@@ -414,9 +448,7 @@ class WC_Memberships_Rules {
 	 * Get product restriction rules for a taxonomy
 	 *
 	 * @since 1.0.0
-	 *
 	 * @see WC_Memberships::get_rules()
-	 *
 	 * @param string $taxonomy Taxonomy
 	 * @return array|bool $rules Array of rules or false on error
 	 */
@@ -433,9 +465,7 @@ class WC_Memberships_Rules {
 	 * Get product restriction rules for a taxonomy term
 	 *
 	 * @since 1.0.0
-	 *
 	 * @see WC_Memberships::get_rules()
-	 *
 	 * @param string $taxonomy Taxonomy
 	 * @param string|int $term_id Term ID or slug
 	 * @return array|bool $rules Array of rules or false on error
@@ -454,15 +484,13 @@ class WC_Memberships_Rules {
 	 * Get purchasing discount rules
 	 *
 	 * @since 1.0.0
-	 *
 	 * @see WC_Memberships::get_rules()
-	 *
 	 * @param array $args Associative array of arguments
 	 * @return array|bool $rules Array of rules or false on error
 	 */
 	public function get_purchasing_discount_rules( $args = array() ) {
 
-		// If an object id is set, default to the product post_type
+		// if an object id is set, default to the product post_type
 		if ( isset( $args['object_id'] ) ) {
 			$args = wp_parse_args( $args, array(
 				'content_type'      => 'post_type',
@@ -470,12 +498,14 @@ class WC_Memberships_Rules {
 			) );
 		}
 
-		// Force 'product' as the only valid post_type
+		// force 'product' as the only valid post_type
 		if ( isset( $args['content_type'] ) && 'post_type' == $args['content_type'] ) {
 			$args['content_type_name'] = 'product';
 		}
 
-		return $this->get_rules( 'purchasing_discount', $args );
+		$args['rule_type'] = 'purchasing_discount';
+
+		return $this->get_rules( $args );
 	}
 
 
@@ -483,9 +513,7 @@ class WC_Memberships_Rules {
 	 * Get purchasing discount rules for a product
 	 *
 	 * @since 1.0.0
-	 *
 	 * @see WC_Memberships::get_rules()
-	 *
 	 * @param int $product_id Product ID
 	 * @return array|bool $rules Array of rules or false on error
 	 */
@@ -501,9 +529,7 @@ class WC_Memberships_Rules {
 	 * Get purchasing discount rules for a taxonomy
 	 *
 	 * @since 1.0.0
-	 *
 	 * @see WC_Memberships::get_rules()
-	 *
 	 * @param string $taxonomy Taxonomy
 	 * @return array|bool $rules Array of rules or false on error
 	 */
@@ -520,9 +546,7 @@ class WC_Memberships_Rules {
 	 * Get purchasing discount rules for a taxonomy term
 	 *
 	 * @since 1.0.0
-	 *
 	 * @see WC_Memberships::get_rules()
-	 *
 	 * @param string $taxonomy Taxonomy
 	 * @param string|int $term_id Term ID or slug
 	 * @return array|bool $rules Array of rules or false on error
@@ -542,20 +566,17 @@ class WC_Memberships_Rules {
 	 *
 	 * @since 1.0.0
 	 * @param string $rule_id Rule ID
-	 * @return WC_Memberships_Membership_Plan_Rule|null Instance of WC_Memberships_Membership_Plan_Rule
-	 *                                                  or null, if not found
+	 * @return WC_Memberships_Membership_Plan_Rule|null Instance of WC_Memberships_Membership_Plan_Rule or null, if not found
 	 */
 	public function get_rule( $rule_id ) {
 
 		$found_rule = null;
 
-		foreach ( array( 'content_restriction', 'product_restriction', 'purchasing_discount' ) as $ruleset ) {
-			foreach ( $this->get_rules( $ruleset ) as $rule ) {
+		foreach ( $this->get_rules() as $rule ) {
 
-				if ( $rule_id == $rule->get_id() ) {
-					$found_rule = $rule;
-					break 2;
-				}
+			if ( $rule_id == $rule->get_id() ) {
+				$found_rule = $rule;
+				break;
 			}
 		}
 
@@ -876,13 +897,47 @@ class WC_Memberships_Rules {
 			return null;
 		}
 
-		$posts = get_posts(array(
+		$posts = get_posts( array(
 			'name'           => $slug,
 			'post_type'      => $post_type,
 			'posts_per_page' => 1,
-		));
+		) );
 
 		return ! empty( $posts ) ? $posts[0] : null;
+	}
+
+
+	/**
+	 * Get public posts
+	 *
+	 * @since 1.1.0
+	 * @return array
+	 */
+	public function get_public_posts() {
+
+		return get_posts( array(
+			'post_type'      => array_keys( wc_memberships()->admin->get_valid_post_types_for_content_restriction() ),
+			'post_status'    => 'any',
+			'meta_key'       => '_wc_memberships_force_public',
+			'meta_value'     => 'yes',
+ 		) );
+	}
+
+
+	/**
+	 * Get public posts
+	 *
+	 * @since 1.1.0
+	 * @return array
+	 */
+	public function get_public_products() {
+
+		return get_posts( array(
+			'post_type'      => 'product',
+			'post_status'    => 'any',
+			'meta_key'       => '_wc_memberships_force_public',
+			'meta_value'     => 'yes',
+ 		) );
 	}
 
 

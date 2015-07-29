@@ -126,7 +126,7 @@ class WC_Memberships_Post_Types {
 				'map_meta_cap'        => true,
 				'publicly_queryable'  => false,
 				'exclude_from_search' => true,
-				'show_in_menu'        => false,
+				'show_in_menu'        => $show_in_menu,
 				'hierarchical'        => false,
 				'rewrite'             => false,
 				'query_var'           => false,

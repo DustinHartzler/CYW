@@ -42,8 +42,8 @@ class WC_Memberships_Admin {
 	/** @var array Array of valid post types for content restriction rules */
 	private $valid_post_types_for_content_restriction;
 
-	/** @var array Array of valid taxonomies for rulesets */
-	private $valid_ruleset_taxonomies = array();
+	/** @var array Array of valid taxonomies for rule types */
+	private $valid_rule_type_taxonomies = array();
 
 	/** @var stdClass meta box class instances */
 	public $meta_boxes;
@@ -78,6 +78,9 @@ class WC_Memberships_Admin {
 
 		// Load WC styles / scripts
 		add_filter( 'woocommerce_screen_ids', array( $this, 'load_wc_scripts' ) );
+
+		// conditionally remove duplicate submenu link
+		add_action( 'admin_menu', array( $this, 'remove_submenu_link' ) );
 
 		// Set current tab for memberships admin pages
 		add_filter( 'wc_memberships_admin_current_tab', array( $this, 'set_current_tab' ) );
@@ -265,7 +268,7 @@ class WC_Memberships_Admin {
 		wp_enqueue_style( 'wc-memberships-admin', wc_memberships()->get_plugin_url() . '/assets/css/admin/wc-memberships-admin.min.css', WC_Memberships::VERSION );
 
 		if ( ! SV_WC_Plugin_Compatibility::is_wc_version_gte_2_3() ) {
-			wp_enqueue_style( 'wc-memberships-admin-wc-pre-2_3', wc_memberships()->get_plugin_url() . '/assets/css/admin/wc-memberships-admin-wc-pre-2_3.min.css', WC_Memberships::VERSION );
+			wp_enqueue_style( 'wc-memberships-admin-wc-pre-2_3', wc_memberships()->get_plugin_url() . '/assets/css/admin/wc-memberships-admin-wc-pre-2_3.min.css', array( 'woocommerce_admin_styles' ), WC_Memberships::VERSION );
 		}
 
 		// enqueue admin scripts
@@ -321,6 +324,30 @@ class WC_Memberships_Admin {
 	 */
 	public function load_wc_scripts( $screen_ids ) {
 		return array_merge( $screen_ids, $this->get_screen_ids() );
+	}
+
+
+	/**
+	 * Remove the duplicate submenu link for Memberships custom post type that
+	 * is not being viewed. It's easier to add both submenu links via register_post_type()
+	 * and conditionally remove them here than it is try to add them both
+	 * correctly.
+	 *
+	 * @since 1.2.0
+	 */
+	public function remove_submenu_link() {
+		global $pagenow, $typenow;
+
+		$submenu_slug = 'edit.php?post_type=wc_membership_plan';
+
+		// remove user membership submenu page when viewing or editing membership plans
+		if ( ( 'edit.php' === $pagenow && 'wc_membership_plan' === $typenow ) ||
+			 ( 'post.php' === $pagenow && isset( $_GET['post'] ) && 'wc_membership_plan' === get_post_type( $_GET['post'] ) ) ) {
+
+			$submenu_slug = 'edit.php?post_type=wc_user_membership';
+		}
+
+		remove_submenu_page( 'woocommerce', $submenu_slug );
 	}
 
 
@@ -430,35 +457,32 @@ class WC_Memberships_Admin {
 
 
 	/**
-	 * Get valid taxonomies for a ruleset
+	 * Get valid taxonomies for a rule type
 	 *
 	 * @since 1.0.0
-	 * @param string $ruleset Ruleset name. One of 'content_restriction', 'product_restriction' or 'purchasing_discount'
+	 * @param string $rule_type Rule type. One of 'content_restriction', 'product_restriction' or 'purchasing_discount'
 	 * @return array Associative array of taxonomy names and labels
 	 */
-	public function get_valid_taxonomies_for_ruleset( $ruleset ) {
+	public function get_valid_taxonomies_for_rule_type( $rule_type ) {
 
-		if ( ! isset( $this->valid_ruleset_taxonomies[ $ruleset ] ) ) {
+		if ( ! isset( $this->valid_rule_type_taxonomies[ $rule_type ] ) ) {
 
-			$args               = array( 'public' => true );
-			$exclude_taxonomies = array();
+			$excluded_taxonomies = array( 'product_shipping_class' );
 
-			switch ( $ruleset ) {
+			switch ( $rule_type ) {
 
 				case 'content_restriction':
-					$exclude_taxonomies = array( 'post_format', 'product_shipping_class' );
-					break;
+					$excluded_taxonomies = array_merge( $excluded_taxonomies, array( 'post_format', 'product_cat' ) );
+				break;
 
 				case 'product_restriction':
 				case 'purchasing_discount':
-					$exclude_taxonomies = array( 'product_tag' );
-					$args['object_type'] = array( 'product' );
-					break;
-
+					$excluded_taxonomies = array_merge( $excluded_taxonomies, array( 'product_tag' ) );
+				break;
 			}
 
 			/**
-			 * Exclude taxonomies from a ruleset
+			 * Exclude taxonomies from a rule type
 			 *
 			 * This filter allows excluding taxonomies from content & product restriction and
 			 * purchasing discount rules.
@@ -466,40 +490,47 @@ class WC_Memberships_Admin {
 			 * @since 1.0.0
 			 * @param array $taxonomies List of taxonomies to exclude
 			 */
-			$excluded_taxonomies = apply_filters( "wc_memberships_{$ruleset}_excluded_taxonomies", $exclude_taxonomies );
+			$excluded_taxonomies = apply_filters( "wc_memberships_{$rule_type}_excluded_taxonomies", $excluded_taxonomies );
 
-			$this->valid_ruleset_taxonomies[ $ruleset ] = array();
+			$this->valid_rule_type_taxonomies[ $rule_type ] = array();
 
-			foreach ( get_taxonomies( $args, 'objects' ) as $taxonomy ) {
+			// $wp_taxonomy global used as some post types (product add-ons) attach
+			// themselves to certain product-related taxonomies (like product_cat)
+			// and get_taxonomies() provides no way to do an in_array() on the object
+			// types. they either must match exactly or the taxonomy isn't returned
+			foreach ( $GLOBALS['wp_taxonomies'] as $taxonomy ) {
 
-
-				// Skip excluded taxonomies
-				if ( ! empty( $excluded_taxonomies ) && in_array( $taxonomy->name, $excluded_taxonomies ) ) {
+				// skip non-public or excluded taxonomies
+				if ( ! $taxonomy->public || ( ! empty( $excluded_taxonomies ) && in_array( $taxonomy->name, $excluded_taxonomies ) ) ) {
 					continue;
 				}
 
-				if ( 'content_restriction' == $ruleset ) {
+				if ( 'content_restriction' == $rule_type ) {
 
-					// Skip product-only taxonomies, they are listed in product restriction rules
+					// skip product-only taxonomies, they are listed in product restriction rules
 					if ( count( $taxonomy->object_type ) == 1 && in_array( 'product', $taxonomy->object_type ) ) {
 						continue;
 					}
 				}
 
-				if ( in_array( $ruleset, array( 'product_restriction', 'purchasing_discount' ) ) ) {
+				if ( in_array( $rule_type, array( 'product_restriction', 'purchasing_discount' ) ) ) {
 
-					// Skip product attributes
+					// skip taxonomies not registered for products
+					if ( ! in_array( 'product', (array) $taxonomy->object_type ) ) {
+						continue;
+					}
+
+					// skip product attributes
 					if ( strpos( $taxonomy->name, 'pa_' ) === 0 ) {
 						continue;
 					}
 				}
 
-				$this->valid_ruleset_taxonomies[ $ruleset ][ $taxonomy->name ] = $taxonomy;
+				$this->valid_rule_type_taxonomies[ $rule_type ][ $taxonomy->name ] = $taxonomy;
 			}
-
 		}
 
-		return $this->valid_ruleset_taxonomies[ $ruleset ];
+		return $this->valid_rule_type_taxonomies[ $rule_type ];
 	}
 
 
@@ -510,7 +541,7 @@ class WC_Memberships_Admin {
 	 * @return array Associative array of taxonomy names and labels
 	 */
 	public function get_valid_taxonomies_for_content_restriction() {
-		return $this->get_valid_taxonomies_for_ruleset( 'content_restriction' );
+		return $this->get_valid_taxonomies_for_rule_type( 'content_restriction' );
 	}
 
 
@@ -521,7 +552,7 @@ class WC_Memberships_Admin {
 	 * @return array Associative array of taxonomy names and labels
 	 */
 	public function get_valid_taxonomies_for_product_restriction() {
-		return $this->get_valid_taxonomies_for_ruleset( 'product_restriction' );
+		return $this->get_valid_taxonomies_for_rule_type( 'product_restriction' );
 	}
 
 
@@ -532,7 +563,7 @@ class WC_Memberships_Admin {
 	 * @return array Associative array of taxonomy names and labels
 	 */
 	public function get_valid_taxonomies_for_purchasing_discounts() {
-		return $this->get_valid_taxonomies_for_ruleset( 'purchasing_discount' );
+		return $this->get_valid_taxonomies_for_rule_type( 'purchasing_discount' );
 	}
 
 
@@ -573,7 +604,7 @@ class WC_Memberships_Admin {
 				$plan_links[] = '<a href="' . esc_url( get_edit_post_link( $membership->get_id() ) ) . '">' . wp_kses_post( $membership->get_plan()->get_name() ) . '</a>';
 			}
 
-			printf( esc_html__( 'This user is a member of %s. %sAdd another membership%s.', WC_Memberships::TEXT_DOMAIN ), $this->list_items( $plan_links ), '<a href="' . admin_url( 'post-new.php?post_type=wc_user_membership&user=' . $user->ID ) . '">', '</a>' );
+			printf( esc_html__( 'This user is a member of %s. %sAdd another membership%s.', WC_Memberships::TEXT_DOMAIN ), wc_memberships()->list_items( $plan_links ), '<a href="' . admin_url( 'post-new.php?post_type=wc_user_membership&user=' . $user->ID ) . '">', '</a>' );
 		}
 		else {
 			printf( esc_html__( 'This user has no memberships yet. %sAdd a membership manually%s.', WC_Memberships::TEXT_DOMAIN ), '<a href="' . admin_url( 'post-new.php?post_type=wc_user_membership&user=' . $user->ID ) . '">', '</a>' );
@@ -592,34 +623,36 @@ class WC_Memberships_Admin {
 
 
 	/**
-	 * Update rules for each provided ruleset
+	 * Update rules for each provided rule type
 	 *
 	 * This method should be used by individual meta boxes that are updating rules
 	 *
 	 * @since 1.0.0
 	 * @param int $post_id
-	 * @param array $rulesets Array of rulesets to update
+	 * @param array $rule_types Array of rule types to update
 	 * @param string $target Optional. Indicates the context we are updating rules in. One of 'plan' or 'post'
 	 */
-	public function update_rules( $post_id, $rulesets, $target = 'plan' ) {
+	public function update_rules( $post_id, $rule_types, $target = 'plan' ) {
 
-		foreach ( $rulesets as $ruleset ) {
+		$rules = get_option( 'wc_memberships_rules' );
 
-			$ruleset_post_key = '_' . $ruleset . '_rules';
+		foreach ( $rule_types as $rule_type ) {
 
-			if ( ! isset( $_POST[ $ruleset_post_key ] ) ) {
+			$rule_type_post_key = '_' . $rule_type . '_rules';
+
+			if ( ! isset( $_POST[ $rule_type_post_key ] ) ) {
 				continue;
 			}
 
-			// Save ruleset
-			$posted_rules = $_POST[ $ruleset_post_key ];
+			// Save rule type
+			$posted_rules = $_POST[ $rule_type_post_key ];
 
 			// Remove template rule
 			if ( isset( $posted_rules['__INDEX__'] ) ) {
 				unset( $posted_rules['__INDEX__'] );
 			}
 
-			// Stop processing ruleset if no rules left
+			// Stop processing rule type if no rules left
 			if ( empty( $posted_rules ) ) {
 				continue;
 			}
@@ -638,6 +671,9 @@ class WC_Memberships_Admin {
 				if ( ! isset( $rule['id'] ) || ! $rule['id'] ) {
 					$rule['id'] = uniqid( 'rule_' );
 				}
+
+				// Make sure each rule has the rule type set
+				$rule['rule_type'] = $rule_type;
 
 				// If updating rules for a single plan, set the plan ID
 				// and content type fields on the rule
@@ -674,11 +710,16 @@ class WC_Memberships_Admin {
 				}
 
 				// Content restriction & product restricion:
-				if ( in_array( $ruleset, array( 'content_restriction', 'product_restriction' ) ) ) {
+				if ( in_array( $rule_type, array( 'content_restriction', 'product_restriction' ) ) ) {
 
 					// Make sure access_schedule_exclude_trial is set, even if it's a no
 					if ( ! isset( $rule['access_schedule_exclude_trial'] ) ) {
 						$rule['access_schedule_exclude_trial'] = 'no';
+					}
+
+					// If no access schedule is set, set it to immediate by default
+					if ( ! isset( $rule['access_schedule'] ) ) {
+						$rule['access_schedule'] = 'immediate';
 					}
 
 					// Normalize access schedule
@@ -697,7 +738,7 @@ class WC_Memberships_Admin {
 				}
 
 				// Purchasing discounts:
-				else if ( 'purchasing_discount' == $ruleset  ) {
+				else if ( 'purchasing_discount' == $rule_type  ) {
 
 					// Make sure active is set, even if it's a no
 					$rule['active'] = isset( $rule['active'] ) && $rule['active'] ? 'yes' : 'no';
@@ -709,14 +750,6 @@ class WC_Memberships_Admin {
 			} // end pre-processing rules
 
 
-			// Update rules in DB
-			$rules = (array) wc_memberships()->rules->get_rules( $ruleset );
-
-			// Convert rule objects back to arrays, because that's just easier to work with
-			foreach ( $rules as $key => $rule ) {
-				$rules[ $key ] = $rule->get_raw_data();
-			}
-
 			// Process posted rules
 			foreach ( $posted_rules as $key => $posted ) {
 
@@ -725,8 +758,15 @@ class WC_Memberships_Admin {
 				// This is an existing rule
 				if ( is_numeric( $existing_rule_key ) ) {
 
+					$rule = new WC_Memberships_Membership_Plan_Rule( $rules[ $existing_rule_key ] );
+
 					// Check capabilities
-					if ( ! current_user_can( 'wc_memberships_edit_rule', $rules[ $existing_rule_key ]['id'] ) ) {
+					if ( $rule->content_type_exists() && ! $rule->current_user_can_edit() ) {
+						continue;
+					}
+
+					// Check if current context allows editing
+					if ( ! $rule->current_context_allows_editing() ) {
 						continue;
 					}
 
@@ -777,9 +817,11 @@ class WC_Memberships_Admin {
 				}
 			}
 
-			update_option( 'wc_memberships_' . $ruleset . '_rules', $rules );
 		}
 
+		if ( ! empty( $rules ) ) {
+			update_option( 'wc_memberships_rules', array_values( $rules ) );
+		}
 	}
 
 
@@ -803,20 +845,6 @@ class WC_Memberships_Admin {
 			update_post_meta( $post_id, "_wc_memberships_{$message_type}_message", $message );
 			update_post_meta( $post_id, "_wc_memberships_use_custom_{$message_type}_message", $use_custom );
 		}
-	}
-
-
-	/**
-	 * Creates a human readable list of an array
-	 *
-	 * @since 1.0.0
-	 * @param string[] $ranges array to list items of
-	 * @return string 'item1, item2, item3 or item4'
-	 */
-	private function list_items( $items ) {
-
-		array_splice( $items, -2, 2, implode( ' ' . __( 'and', WC_Memberships::TEXT_DOMAIN ) . ' ', array_slice( $items, -2, 2 ) ) );
-		return implode( ', ', $items );
 	}
 
 

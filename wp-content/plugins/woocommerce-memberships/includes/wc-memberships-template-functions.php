@@ -60,26 +60,22 @@ if ( ! function_exists( 'wc_memberships_restrict' ) ) {
 
 		$has_access = false;
 
-		// Always grant access when no plans were specified
-		if ( ! $plans || empty( $plans ) ) {
+		// grant access to super users
+		if ( current_user_can( 'wc_memberships_access_all_restricted_content' ) ) {
 			$has_access = true;
 		}
 
-		// Always grant access if user can manage WooCommerce
-		elseif ( current_user_can( 'manage_woocommerce' ) ) {
-			$has_access = true;
+		// default to use all plans if no plan is specified
+		if ( empty( $plans ) ) {
+			$plans = wc_memberships_get_membership_plans();
 		}
 
-		else {
+		foreach ( $plans as $plan_id_or_slug ) {
+			$membership_plan = wc_memberships_get_membership_plan( $plan_id_or_slug );
 
-			foreach ( $plans as $plan_id_or_slug ) {
-				$membership_plan = wc_memberships_get_membership_plan( trim( $plan_id_or_slug ) );
-
-				if ( $membership_plan && wc_memberships_is_user_active_member( get_current_user_id(), $membership_plan->get_id() ) ) {
-					$has_access = true;
-					break;
-				}
-
+			if ( $membership_plan && wc_memberships_is_user_active_member( get_current_user_id(), $membership_plan->get_id() ) ) {
+				$has_access = true;
+				break;
 			}
 		}
 
@@ -87,7 +83,6 @@ if ( ! function_exists( 'wc_memberships_restrict' ) ) {
 			echo $content;
 		}
 	}
-
 }
 
 

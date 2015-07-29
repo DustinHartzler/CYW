@@ -167,27 +167,17 @@ class WC_Memberships_Membership_Plans {
 		}
 
 		// Find related restriction rules and delete them
-		$rulesets = array( 'content_restriction', 'product_restriction', 'purchasing_discount' );
+		$rules = (array) get_option( 'wc_memberships_rules' );
 
-		foreach ( $rulesets as $ruleset ) {
-			$rules = (array) wc_memberships()->rules->get_rules( $ruleset );
+		foreach ( $rules as $key => $rule ) {
 
-			// Loop over rules and remove any that have the plan being deleted
-			foreach ( $rules as $key => $rule ) {
-
-				// Convert to raw data
-				$rules[ $key ] = $rule->get_raw_data();
-
-				// Remove if the rule is for the plan being deleted
-				if ( $post_id === $rule->get_membership_plan_id() ) {
-					unset( $rules[ $key ] );
-				}
+			// Remove related rule
+			if ( $rule['membership_plan_id'] == $post_id ) {
+				unset( $rules[ $key ] );
 			}
-
-			// Save updated rules to DB
-			update_option( 'wc_memberships_' . $ruleset . '_rules', $rules );
-
 		}
+
+		update_option( 'wc_memberships_rules', array_values( $rules ) );
 	}
 
 }

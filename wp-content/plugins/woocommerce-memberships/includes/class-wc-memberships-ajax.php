@@ -48,7 +48,6 @@ class WC_Memberships_AJAX {
 
 		// Filter out grouped products from JSON search results
 		add_filter( 'woocommerce_json_search_found_products', array( $this, 'filter_json_search_found_products' ) );
-
 	}
 
 

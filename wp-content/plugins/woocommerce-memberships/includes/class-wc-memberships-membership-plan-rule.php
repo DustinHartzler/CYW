@@ -36,9 +36,6 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 class WC_Memberships_Membership_Plan_Rule {
 
 
-	/** @var string Rule type */
-	private $type;
-
 	/** @var array Rule data */
 	private $data = array();
 
@@ -47,13 +44,11 @@ class WC_Memberships_Membership_Plan_Rule {
 	 * Setup rule
 	 *
 	 * @since 1.0.0
-	 * @param string $type Rule type
 	 * @param array $data Rule data
 	 * @return \WC_Memberships_Membership_Plan_Rule
 	 */
-	public function __construct( $type, array $data ) {
+	public function __construct( array $data ) {
 
-		$this->type = $type;
 		$this->data = $data;
 	}
 
@@ -126,17 +121,6 @@ class WC_Memberships_Membership_Plan_Rule {
 
 
 	/**
-	 * Get the rule type
-	 *
-	 * @since 1.0.0
-	 * @return string Rule type
-	 */
-	public function get_type() {
-		return $this->type;
-	}
-
-
-	/**
 	 * Get the raw rule data
 	 *
 	 * @since 1.0.0
@@ -153,6 +137,7 @@ class WC_Memberships_Membership_Plan_Rule {
 	 * Returns the amount part of the schedule.
 	 * For example, returns '5' for the schedule '5 days'
 	 *
+	 * @since 1.0.0
 	 * @return int|string Amount or empty string if no schedule
 	 */
 	public function get_access_schedule_amount() {
@@ -168,6 +153,7 @@ class WC_Memberships_Membership_Plan_Rule {
 	 * Returns the period part of the access schedule.
 	 * For example, returns 'days' for the schedule '5 days'
 	 *
+	 * @since 1.0.0
 	 * @return int|string Access schedule period
 	 */
 	public function get_access_schedule_period() {
@@ -183,6 +169,7 @@ class WC_Memberships_Membership_Plan_Rule {
 	 * Returns the access start time this rule grants
 	 * for a piece of content, based on the input time.
 	 *
+	 * @since 1.0.0
 	 * @param string $from_time Timestamp for the time the access start
 	 *                               time should be calculated from
 	 * @return string Access start time as a timestamp
@@ -221,6 +208,7 @@ class WC_Memberships_Membership_Plan_Rule {
 	 * Combines content_type and content type name into a single
 	 * key so that it can be used as a HTML select option value.
 	 *
+	 * @since 1.0.0
 	 * @return string|null Content type key, example: "post_type|product"
 	 */
 	public function get_content_type_key() {
@@ -229,6 +217,20 @@ class WC_Memberships_Membership_Plan_Rule {
 		$content_type_name = $this->get_content_type_name();
 
 		return ( $content_type && $content_type_name ) ? $content_type . '|' . $content_type_name : null;
+	}
+
+
+	/**
+	 * Check if the content type exists
+	 *
+	 * @since 1.1.0
+	 * @return bool True, if exists, false otherwise
+	 */
+	public function content_type_exists() {
+
+		return 'post_type' == $this->get_content_type()
+				  ? post_type_exists( $this->get_content_type_name() )
+				  : taxonomy_exists( $this->get_content_type_name() );
 	}
 
 
@@ -301,6 +303,17 @@ class WC_Memberships_Membership_Plan_Rule {
 	 */
 	public function is_active() {
 		return $this->get_rule_value( 'active' ) == 'yes';
+	}
+
+
+	/**
+	 * Check if this rule is new (has no ID)
+	 *
+	 * @since 1.0.0
+	 * @return bool True, if new, false otherwise
+	 */
+	public function is_new() {
+		return ! $this->get_id();
 	}
 
 
@@ -438,5 +451,52 @@ class WC_Memberships_Membership_Plan_Rule {
 
 		return $action;
 	}
+
+
+	/**
+	 * Get rule priority
+	 *
+	 * Priority will be determined by the type of content the rule applies to.
+	 * 10 = post type
+	 * 20 = taxonomy
+	 * 30 = term
+	 * 40 = post
+	 * A higher number means a higher priority
+	 *
+	 * @since 1.1.0
+	 * @return int
+	 */
+	public function get_priority() {
+
+		$priority = 0;
+
+		$object_ids = $this->get_object_ids();
+
+		if ( 'post_type' == $this->get_content_type() && ! empty( $object_ids ) ) {
+			$priority = 40;
+		}
+
+		else if ( 'taxonomy' == $this->get_content_type() && ! empty( $object_ids ) ) {
+			$priority = 30;
+		}
+
+		else if ( 'taxonomy' == $this->get_content_type() && empty( $object_ids ) ) {
+			$priority = 20;
+		}
+
+		else if ( 'post_type' == $this->get_content_type() && empty( $object_ids ) ) {
+			$priority = 10;
+		}
+
+		/**
+		 * Filter rule priority
+		 *
+		 * @since 1.1.0
+		 * @param int $priority
+		 * @param WC_Memberships_Membership_Plan_Rule $rule
+		 */
+		return apply_filters( 'wc_memberships_rule_priority', $priority, $this );
+	}
+
 
 }

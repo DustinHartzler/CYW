@@ -46,6 +46,11 @@ class WC_Memberships_Integration_User_Switching {
 
 		add_action( 'switch_back_user',  array( $this, 'remove_temp_user' ) );
 		add_action( 'clear_auth_cookie', array( $this, 'remove_temp_user' ) );
+
+		if ( get_user_meta( get_current_user_id(), '_wc_memberships_temp_user', true ) ) {
+			add_filter( 'show_admin_bar', '__return_true', 9999 );
+		}
+
 	}
 
 

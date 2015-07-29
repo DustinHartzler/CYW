@@ -137,7 +137,8 @@ class WC_Memberships_Meta_Box_Product_Memberships_Data extends WC_Memberships_Me
 		);
 
 		// Get applied restriction rules
-		$product_restriction_rules = wc_memberships()->rules->get_rules( 'product_restriction', array(
+		$product_restriction_rules = wc_memberships()->rules->get_rules( array(
+			'rule_type'         => 'product_restriction',
 			'object_id'         => $post->ID,
 			'content_type'      => 'post_type',
 			'content_type_name' => $post->post_type,
@@ -147,7 +148,8 @@ class WC_Memberships_Meta_Box_Product_Memberships_Data extends WC_Memberships_Me
 
 		// Add empty option to create a HTML template for new rules
 		$membership_plan_ids = array_keys( $membership_plan_options );
-		$product_restriction_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( 'product_restriction', array(
+		$product_restriction_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( array(
+			'rule_type'          => 'product_restriction',
 			'object_ids'         => array( $post->ID ),
 			'id'                 => '',
 			'membership_plan_id' => array_shift( $membership_plan_ids ),
@@ -156,7 +158,8 @@ class WC_Memberships_Meta_Box_Product_Memberships_Data extends WC_Memberships_Me
 		) );
 
 		// Get applied restriction rules
-		$purchasing_discount_rules = wc_memberships()->rules->get_rules( 'purchasing_discount', array(
+		$purchasing_discount_rules = wc_memberships()->rules->get_rules( array(
+			'rule_type'         => 'purchasing_discount',
 			'object_id'         => $post->ID,
 			'content_type'      => 'post_type',
 			'content_type_name' => $post->post_type,
@@ -165,7 +168,8 @@ class WC_Memberships_Meta_Box_Product_Memberships_Data extends WC_Memberships_Me
 		));
 
 		// Add empty option to create a HTML template for new rules
-		$purchasing_discount_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( 'purchasing_discount', array(
+		$purchasing_discount_rules['__INDEX__'] = new WC_Memberships_Membership_Plan_Rule( array(
+			'rule_type'          => 'purchasing_discount',
 			'object_ids'         => array( $post->ID ),
 			'id'                 => '',
 			'membership_plan_id' => '',
@@ -240,52 +244,64 @@ class WC_Memberships_Meta_Box_Product_Memberships_Data extends WC_Memberships_Me
 					<?php esc_html_e( 'These rules affect all variations. For variation-level control use the membership plan screen.', WC_Memberships::TEXT_DOMAIN ); ?>
 				</p>
 
-				<div class="options_group">
-					<div class="table-wrap">
-						<?php require( wc_memberships()->get_plugin_path() . '/includes/admin/meta-boxes/views/html-product-restriction-rules.php' ); ?>
-					</div>
-				</div>
+				<?php woocommerce_wp_checkbox( array(
+					'id'          => '_wc_memberships_force_public',
+					'class'       => 'js-toggle-rules',
+					'label'       => __( 'Disable restrictions', WC_Memberships::TEXT_DOMAIN ),
+					'description' => __( 'Check this box if you want to force this product to be public regardless of any restriction rules that may apply now or in the future.', WC_Memberships::TEXT_DOMAIN ),
+				) ); ?>
 
-				<div class="options_group">
+				<div class="js-restrictions <?php if ( get_post_meta( $post->ID, '_wc_memberships_force_public', true ) == 'yes' ) : ?>hide<?php endif; ?>">
 
-					<?php woocommerce_wp_checkbox( array(
-						'id'          => '_wc_memberships_use_custom_product_viewing_restricted_message',
-						'class'       => 'js-toggle-custom-message',
-						'label'       => __( 'Use custom message', WC_Memberships::TEXT_DOMAIN ),
-						'description' => __( 'Check this box if you want to customize the <strong>viewing restricted message</strong> for this product.', WC_Memberships::TEXT_DOMAIN )
-					) ); ?>
-
-					<div class="js-custom-message-editor-container <?php if ( get_post_meta( $post->ID, '_wc_memberships_use_custom_product_viewing_restricted_message', true ) !== 'yes' ) : ?>hide<?php endif; ?>">
-					<?php
-					$message = get_post_meta( $post->ID, '_wc_memberships_product_viewing_restricted_message', true );
-					wp_editor( $message, '_wc_memberships_product_viewing_restricted_message', array(
-						'textarea_rows' => 5,
-						'teeny'         => true,
-					) );
-					?>
+					<div class="options_group">
+						<div class="table-wrap">
+							<?php require( wc_memberships()->get_plugin_path() . '/includes/admin/meta-boxes/views/html-product-restriction-rules.php' ); ?>
+						</div>
 					</div>
 
-				</div>
+					<div class="options_group">
 
-				<div class="options_group">
+						<?php woocommerce_wp_checkbox( array(
+							'id'          => '_wc_memberships_use_custom_product_viewing_restricted_message',
+							'class'       => 'js-toggle-custom-message',
+							'label'       => __( 'Use custom message', WC_Memberships::TEXT_DOMAIN ),
+							'description' => __( 'Check this box if you want to customize the <strong>viewing restricted message</strong> for this product.', WC_Memberships::TEXT_DOMAIN )
+						) ); ?>
 
-					<?php woocommerce_wp_checkbox( array(
-						'id'          => '_wc_memberships_use_custom_product_purchasing_restricted_message',
-						'class'       => 'js-toggle-custom-message',
-						'label'       => __( 'Use custom message', WC_Memberships::TEXT_DOMAIN ),
-						'description' => __( 'Check this box if you want to customize the <strong>purchasing restricted message</strong> for this product.', WC_Memberships::TEXT_DOMAIN )
-					) ); ?>
-
-					<div class="js-custom-message-editor-container <?php if ( get_post_meta( $post->ID, '_wc_memberships_use_custom_product_purchasing_restricted_message', true ) !== 'yes' ) : ?>hide<?php endif; ?>">
-					<?php
-						$message = get_post_meta( $post->ID, '_wc_memberships_product_purchasing_restricted_message', true );
-						wp_editor( $message, '_wc_memberships_product_purchasing_restricted_message', array(
+						<div class="js-custom-message-editor-container <?php if ( get_post_meta( $post->ID, '_wc_memberships_use_custom_product_viewing_restricted_message', true ) !== 'yes' ) : ?>hide<?php endif; ?>">
+						<?php
+						$message = get_post_meta( $post->ID, '_wc_memberships_product_viewing_restricted_message', true );
+						echo '<p>' . sprintf( __( '<code>%s</code> automatically inserts the product(s) needed to gain access. <code>%s</code> inserts the URL to my account page. HTML is allowed.', WC_Memberships::TEXT_DOMAIN ), '{products}', '{login_url}' ) . '</p>';
+						wp_editor( $message, '_wc_memberships_product_viewing_restricted_message', array(
 							'textarea_rows' => 5,
 							'teeny'         => true,
 						) );
-					?>
+						?>
+						</div>
+
 					</div>
 
+					<div class="options_group">
+
+						<?php woocommerce_wp_checkbox( array(
+							'id'          => '_wc_memberships_use_custom_product_purchasing_restricted_message',
+							'class'       => 'js-toggle-custom-message',
+							'label'       => __( 'Use custom message', WC_Memberships::TEXT_DOMAIN ),
+							'description' => __( 'Check this box if you want to customize the <strong>purchasing restricted message</strong> for this product.', WC_Memberships::TEXT_DOMAIN )
+						) ); ?>
+
+						<div class="js-custom-message-editor-container <?php if ( get_post_meta( $post->ID, '_wc_memberships_use_custom_product_purchasing_restricted_message', true ) !== 'yes' ) : ?>hide<?php endif; ?>">
+						<?php
+							$message = get_post_meta( $post->ID, '_wc_memberships_product_purchasing_restricted_message', true );
+						echo '<p>' . sprintf( __( '<code>%s</code> automatically inserts the product(s) needed to gain access. <code>%s</code> inserts the URL to my account page. HTML is allowed.', WC_Memberships::TEXT_DOMAIN ), '{products}', '{login_url}' ) . '</p>';
+							wp_editor( $message, '_wc_memberships_product_purchasing_restricted_message', array(
+								'textarea_rows' => 5,
+								'teeny'         => true,
+							) );
+						?>
+						</div>
+
+					</div>
 				</div>
 
 				<?php
@@ -323,7 +339,7 @@ class WC_Memberships_Meta_Box_Product_Memberships_Data extends WC_Memberships_Me
                 }
               }
 
-              echo esc_attr( json_encode( $json_ids ) );
+              echo esc_attr( wc_memberships()->wp_json_encode( $json_ids ) );
             ?>" value="<?php echo esc_attr( implode( ',', array_keys( $json_ids ) ) ); ?>" />
 
           <?php else : ?>
@@ -402,6 +418,8 @@ class WC_Memberships_Meta_Box_Product_Memberships_Data extends WC_Memberships_Me
 		// Update restriction & discount rules
 		wc_memberships()->admin->update_rules( $post_id, array( 'product_restriction', 'purchasing_discount' ), 'post' );
 		wc_memberships()->admin->update_custom_message( $post_id, array( 'product_viewing_restricted', 'product_purchasing_restricted' ) );
+
+		update_post_meta( $post_id, '_wc_memberships_force_public', isset( $_POST[ '_wc_memberships_force_public' ] ) ? 'yes' : 'no' );
 
 		// Update membership plans that this product grants access to
 		$plan_ids        = $this->get_product_membership_plans( $post->ID, 'id' );

@@ -44,6 +44,7 @@ class WC_Memberships_Shortcodes {
 
 		$shortcodes = array(
 			'wcm_restrict'           => __CLASS__ . '::restrict',
+			'wcm_nonmember'			 => __CLASS__ . '::nonmember',
 			'wcm_content_restricted' => __CLASS__ . '::content_restricted',
 		);
 
@@ -71,7 +72,7 @@ class WC_Memberships_Shortcodes {
 	public static function restrict( $atts, $content = null ) {
 
 		if ( isset( $atts['plans'] ) ) {
-			$atts['plans'] = explode( ',', $atts['plans'] );
+			$atts['plans'] = array_map( 'trim', explode( ',', $atts['plans'] ) );
 		}
 
 		$atts = shortcode_atts( array(
@@ -80,7 +81,35 @@ class WC_Memberships_Shortcodes {
 
 		ob_start();
 
-		wc_memberships_restrict( $content, $atts['plans'] );
+		wc_memberships_restrict( do_shortcode( $content ), $atts['plans'] );
+
+		return ob_get_clean();
+	}
+
+
+	/**
+	 * Nonmember content shortcode
+	 *
+	 * @since 1.1.0
+	 * @param mixed $atts Shortcode attributes
+	 * @return string Shortcode result
+	 */
+	public static function nonmember( $atts, $content = null ) {
+
+		$plans = wc_memberships_get_membership_plans();
+
+		$active_member = array();
+
+		foreach ( $plans as $plan ) {
+			$active = wc_memberships_is_user_active_member( get_current_user_id(), $plan );
+			array_push( $active_member, $active );
+		}
+
+		ob_start();
+
+		if ( ! in_array( true, $active_member ) ) {
+			echo do_shortcode( $content );
+		}
 
 		return ob_get_clean();
 	}
