@@ -72,21 +72,22 @@ class WC_Memberships_Integration_Subscriptions {
 		add_filter( 'wc_memberships_get_renew_membership_url', array( $this, 'renew_membership_url' ), 10, 2 );
 
 		// Grant membership access (2.0 & backwards compatible)
-		add_filter( 'wc_memberships_renew_membership', array( $this, 'renew_membership' ), 10, 3 );
-		add_filter( 'wc_memberships_access_granting_purchased_product_id', array( $this, 'adjust_access_granting_product_id' ), 10, 3 );
-		add_action( 'wc_memberships_grant_access_from_existing_purchase', array( $this, 'maybe_grant_access_from_subscription' ), 10, 2 );
-		add_filter( 'wc_memberships_new_membership_data', array( $this, 'adjust_new_membership_data' ), 10, 2 );
+		add_filter( 'wc_memberships_renew_membership',                      array( $this, 'renew_membership' ), 10, 3 );
+		add_filter( 'wc_memberships_access_granting_purchased_product_id',  array( $this, 'adjust_access_granting_product_id' ), 10, 3 );
+		add_action( 'wc_memberships_grant_access_from_existing_purchase',   array( $this, 'maybe_grant_access_from_subscription' ), 10, 2 );
+		add_filter( 'wc_memberships_new_membership_data',                   array( $this, 'adjust_new_membership_data' ), 10, 2 );
 		add_action( 'wc_memberships_grant_membership_access_from_purchase', array( $this, 'save_subscription_data' ), 10, 2 );
 
 		// Add a free_trial membership status (2.0 & backwards compatible)
-		add_filter( 'wc_memberships_user_membership_statuses', array( $this, 'add_free_trial_status' ) );
-		add_filter( 'wc_memberships_valid_membership_statuses_for_cancel', array( $this, 'enable_cancel_for_free_trial' ) );
+		add_filter( 'wc_memberships_user_membership_statuses',                   array( $this, 'add_free_trial_status' ) );
+		add_filter( 'wc_memberships_valid_membership_statuses_for_cancel',       array( $this, 'enable_cancel_for_free_trial' ) );
 		add_filter( 'wc_memberships_edit_user_membership_screen_status_options', array( $this, 'edit_user_membership_screen_status_options' ), 10, 2 );
-		add_filter( 'wc_memberships_bulk_edit_user_memberships_status_options', array( $this, 'remove_free_trial_from_bulk_edit' ) );
+		add_filter( 'wc_memberships_bulk_edit_user_memberships_status_options',  array( $this, 'remove_free_trial_from_bulk_edit' ) );
 
 		// Frontend UI hooks (2.0 & backwards compatible)
-		add_action( 'wc_memberships_my_memberships_column_headers', array( $this, 'output_subscription_column_headers' ) );
-		add_action( 'wc_memberships_my_memberships_columns',        array( $this, 'output_subscription_columns' ), 20 );
+		add_action( 'wc_memberships_my_memberships_column_headers',     array( $this, 'output_subscription_column_headers' ) );
+		add_action( 'wc_memberships_my_memberships_columns',            array( $this, 'output_subscription_columns' ), 20 );
+		add_action( 'wc_memberships_my_account_my_memberships_actions', array( $this, 'my_membership_actions' ), 10, 2 );
 
 		// Admin UI hooks (2.0 & backwards compatible)
 		add_action( 'wc_memberships_after_user_membership_billing_details',    array( $this, 'output_subscription_details' ) );
@@ -157,17 +158,19 @@ class WC_Memberships_Integration_Subscriptions {
 
 
 	/**
-	 * Get user membership by subscription ID
+	 * Get user memberships by subscription ID
 	 *
 	 * @since 1.0.0
 	 * @param int $subscription_id Subscription ID
-	 * @return WC_Memberships_User_Membership|null
+	 * @return array|null Array of user membership objects or null, if none found
 	 */
-	private function get_user_membership_by_subscription_id( $subscription_id ) {
+	private function get_user_memberships_by_subscription_id( $subscription_id ) {
 
 		global $wpdb;
 
-		$user_membership_id = $wpdb->get_var( $wpdb->prepare( "
+		$user_memberships = null;
+
+		$user_membership_id = $wpdb->get_col( $wpdb->prepare( "
 			SELECT post_id
 			FROM $wpdb->postmeta pm
 			RIGHT JOIN $wpdb->posts p ON pm.post_id = p.ID
@@ -176,26 +179,33 @@ class WC_Memberships_Integration_Subscriptions {
 			AND p.post_type = 'wc_user_membership'
 		", $subscription_id ) );
 
-		if ( ! $user_membership_id ) {
-			return null;
+		if ( ! empty( $user_membership_ids ) ) {
+
+			$user_memberships = array();
+
+			foreach ( $user_membership_ids as $user_membership_id ) {
+				$user_memberships[] = wc_memberships_get_user_membership( $user_membership_id );
+			}
 		}
 
-		return wc_memberships_get_user_membership( $user_membership_id );
+		return $user_memberships;
 	}
 
 
 	/**
-	 * Get user membership by subscription key
+	 * Get user memberships by subscription key
 	 *
 	 * @since 1.0.0
 	 * @param string @subscription_key Subscription key
-	 * @return WC_Memberships_User_Membership|null
+	 * @return array|null Array of user membership objects or null, if none found
 	 */
-	private function get_user_membership_by_subscription_key( $subscription_key ) {
+	private function get_user_memberships_by_subscription_key( $subscription_key ) {
 
 		global $wpdb;
 
-		$user_membership_id = $wpdb->get_var( $wpdb->prepare( "
+		$user_memberships = null;
+
+		$user_membership_ids = $wpdb->get_col( $wpdb->prepare( "
 			SELECT post_id
 			FROM $wpdb->postmeta pm
 			RIGHT JOIN $wpdb->posts p ON pm.post_id = p.ID
@@ -204,11 +214,16 @@ class WC_Memberships_Integration_Subscriptions {
 			AND p.post_type = 'wc_user_membership'
 		", $subscription_key ) );
 
-		if ( ! $user_membership_id ) {
-			return null;
+		if ( ! empty( $user_membership_ids ) ) {
+
+			$user_memberships = array();
+
+			foreach ( $user_membership_ids as $user_membership_id ) {
+				$user_memberships[] = wc_memberships_get_user_membership( $user_membership_id );
+			}
 		}
 
-		return wc_memberships_get_user_membership( $user_membership_id );
+		return $user_memberships;
 	}
 
 
@@ -224,9 +239,9 @@ class WC_Memberships_Integration_Subscriptions {
 	 */
 	public function handle_subscription_status_change_1_5( $user_id, $subscription_key ) {
 
-		$user_membership = $this->get_user_membership_by_subscription_key( $subscription_key );
+		$user_memberships = $this->get_user_memberships_by_subscription_key( $subscription_key );
 
-		if ( ! $user_membership ) {
+		if ( ! $user_memberships ) {
 			return;
 		}
 
@@ -243,9 +258,12 @@ class WC_Memberships_Integration_Subscriptions {
 				break;
 		}
 
-		$subscription = WC_Subscriptions_Manager::get_subscription( $subscription_key );
+		foreach ( $user_memberships as $user_membership ) {
 
-		$this->update_related_membership_status( $subscription, $user_membership, $subscription['status'], $note );
+			$subscription = WC_Subscriptions_Manager::get_subscription( $subscription_key );
+			$this->update_related_membership_status( $subscription, $user_membership, $subscription['status'], $note );
+		}
+
 	}
 
 
@@ -258,13 +276,16 @@ class WC_Memberships_Integration_Subscriptions {
 	 */
 	public function handle_subscription_status_change( WC_Subscription $subscription, $new_status ) {
 
-		$user_membership = $this->get_user_membership_by_subscription_id( $subscription->id );
+		$user_memberships = $this->get_user_memberships_by_subscription_id( $subscription->id );
 
-		if ( ! $user_membership ) {
+		if ( ! $user_memberships ) {
 			return;
 		}
 
-		$this->update_related_membership_status( $subscription, $user_membership, $new_status );
+		foreach ( $user_memberships as $user_membership ) {
+			$this->update_related_membership_status( $subscription, $user_membership, $new_status );
+		}
+
 	}
 
 
@@ -364,18 +385,22 @@ class WC_Memberships_Integration_Subscriptions {
 
 		if ( 'end' == $date_type ) {
 
-			$user_membership = $this->get_user_membership_by_subscription_id( $subscription->id );
+			$user_memberships = $this->get_user_memberships_by_subscription_id( $subscription->id );
 
-			if ( ! $user_membership ) {
+			if ( ! $user_memberships ) {
 				return;
 			}
 
-			$plan_id = $user_membership->get_plan_id();
+			foreach ( $user_memberships as $user_membership ) {
 
-			if ( $plan_id && $this->plan_grants_access_while_subscription_active( $plan_id ) ) {
+				$plan_id = $user_membership->get_plan_id();
 
-				update_post_meta( $user_membership->get_id(), '_end_date', $datetime ? $datetime : '' );
+				if ( $plan_id && $this->plan_grants_access_while_subscription_active( $plan_id ) ) {
+
+					update_post_meta( $user_membership->get_id(), '_end_date', $datetime ? $datetime : '' );
+				}
 			}
+
 		}
 	}
 
@@ -393,9 +418,9 @@ class WC_Memberships_Integration_Subscriptions {
 			return;
 		}
 
-		$user_membership = $this->get_user_membership_by_subscription_id( $post_id );
+		$user_memberships = $this->get_user_memberships_by_subscription_id( $post_id );
 
-		if ( ! $user_membership ) {
+		if ( ! $user_memberships ) {
 			return;
 		}
 
@@ -410,7 +435,10 @@ class WC_Memberships_Integration_Subscriptions {
 				break;
 		}
 
-		$user_membership->cancel_membership( $note );
+		foreach ( $user_memberships as $user_membership ) {
+			$user_membership->cancel_membership( $note );
+		}
+
 	}
 
 
@@ -424,18 +452,22 @@ class WC_Memberships_Integration_Subscriptions {
 	 */
 	public function update_membership_end_date( $is_set, $expiration_date, $subscription_key ) {
 
-		$user_membership = $this->get_user_membership_by_subscription_key( $subscription_key );
+		$user_memberships = $this->get_user_memberships_by_subscription_key( $subscription_key );
 
-		if ( ! $user_membership ) {
+		if ( ! $user_memberships ) {
 			return;
 		}
 
-		$plan_id = $user_membership->get_plan_id();
+		foreach ( $user_memberships as $user_membership ) {
 
-		if ( $plan_id && $this->plan_grants_access_while_subscription_active( $plan_id ) ) {
+			$plan_id = $user_membership->get_plan_id();
 
-			update_post_meta( $user_membership->get_id(), '_end_date', $expiration_date ? date( 'Y-m-d H:i:s', $expiration_date ) : '' );
+			if ( $plan_id && $this->plan_grants_access_while_subscription_active( $plan_id ) ) {
+
+				update_post_meta( $user_membership->get_id(), '_end_date', $expiration_date ? date( 'Y-m-d H:i:s', $expiration_date ) : '' );
+			}
 		}
+
 	}
 
 
@@ -1089,6 +1121,24 @@ class WC_Memberships_Integration_Subscriptions {
 			<?php endif; ?>
 		</td>
 		<?php
+	}
+
+
+	/**
+	 * Remove cancel action from memberships tied to a subscription
+	 *
+	 * @since 1.3.0
+	 * @param array $actions
+	 * @param WC_User_Membership $membership
+	 * @return array
+	 */
+	public function my_membership_actions( $actions, WC_Memberships_User_Membership $membership ) {
+
+		if ( $this->membership_has_subscription( $membership ) ) {
+			unset( $actions['cancel'] );
+		}
+
+		return $actions;
 	}
 
 

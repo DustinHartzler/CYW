@@ -175,22 +175,29 @@ class WC_Memberships_AJAX {
 		check_ajax_referer( 'add-user-membership-note', 'security' );
 
 		$post_id   = (int) $_POST['post_id'];
-		$note      = wp_kses_post( trim( stripslashes( $_POST['note'] ) ) );
+		$note_text = wp_kses_post( trim( stripslashes( $_POST['note'] ) ) );
 		$notify    = isset( $_POST['notify'] ) && $_POST['notify'] == 'true';
 
 		if ( $post_id > 0 ) {
 
 			$user_membership = wc_memberships_get_user_membership( $post_id );
-			$comment_id      = $user_membership->add_note( $note, $notify );
+			$comment_id      = $user_membership->add_note( $note_text, $notify );
+			$note            = get_comment( $comment_id );
 
-			echo '<li rel="' . esc_attr( $comment_id ) . '" class="note ';
-			if ( $notify ) {
-				echo 'notified';
-			}
-			echo '"><div class="note-content">';
-			echo wpautop( wptexturize( $note ) );
-			echo '</div><p class="meta"><a href="#" class="delete-note js-delete-note">'.__( 'Delete note', WC_Memberships::TEXT_DOMAIN ).'</a></p>';
-			echo '</li>';
+			$plan            = $user_membership->get_plan();
+			/* translators: Placeholder for plan name if a plan has been removed */
+			$plan_name       = $plan ? $plan->get_name() : __( '[Plan removed]', WC_Memberships::TEXT_DOMAIN );
+			$note_classes    = get_comment_meta( $note->comment_ID, 'notified', true ) ? array( 'notified', 'note' ) : array( 'note' );
+
+			echo '<div>';
+			echo '<ul id="notes">';
+			include('admin/meta-boxes/views/html-membership-note.php');
+			echo '</ul>';
+
+			echo '<ul id="recent-activity">';
+			include('admin/meta-boxes/views/html-membership-recent-activity-note.php');
+			echo '</ul>';
+			echo '</div>';
 		}
 
 		exit;

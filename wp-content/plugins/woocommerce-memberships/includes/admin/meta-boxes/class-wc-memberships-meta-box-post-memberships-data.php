@@ -136,6 +136,12 @@ class WC_Memberships_Meta_Box_Post_Memberships_Data extends WC_Memberships_Meta_
 
 			<?php require( wc_memberships()->get_plugin_path() . '/includes/admin/meta-boxes/views/html-content-restriction-rules.php' ); ?>
 
+			<?php if ( ! empty( $membership_plans ) ) : ?>
+				<p>
+					<em><?php esc_html_e( 'Need to add or edit a plan?', WC_Memberships::TEXT_DOMAIN ); ?></em> <a target="_blank" href="<?php echo admin_url( 'edit.php?post_type=wc_membership_plan' ); ?>"><?php esc_html_e( 'Manage Membership Plans', WC_Memberships::TEXT_DOMAIN ); ?></a>
+				</p>
+			<?php endif; ?>
+
 			<h4><?php esc_html_e( 'Custom Restriction Message' ); ?></h4>
 
 			<?php woocommerce_wp_checkbox( array(

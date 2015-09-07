@@ -259,6 +259,12 @@ class WC_Memberships_Meta_Box_Product_Memberships_Data extends WC_Memberships_Me
 						</div>
 					</div>
 
+					<?php if ( ! empty( $membership_plans ) ) : ?>
+						<p>
+							<em><?php esc_html_e( 'Need to add or edit a plan?', WC_Memberships::TEXT_DOMAIN ); ?></em> <a target="_blank" href="<?php echo admin_url( 'edit.php?post_type=wc_membership_plan' ); ?>"><?php esc_html_e( 'Manage Membership Plans', WC_Memberships::TEXT_DOMAIN ); ?></a>
+						</p>
+					<?php endif; ?>
+
 					<div class="options_group">
 
 						<?php woocommerce_wp_checkbox( array(
@@ -321,44 +327,56 @@ class WC_Memberships_Meta_Box_Product_Memberships_Data extends WC_Memberships_Me
 					<?php _e( "These settings affect all variations. For variation-level control use the membership plan screen.", WC_Memberships::TEXT_DOMAIN ); ?>
 				</p>
 
-        <!-- Plans that this product grants access to -->
-        <div class="options_group">
+				<!-- Plans that this product grants access to -->
+				<div class="options_group">
 
-          <p class="form-field"><label for="_wc_memberships_membership_plan_ids"><?php esc_html_e( 'Purchasing grants access to', WC_Memberships::TEXT_DOMAIN ); ?></label>
+				<?php if ( empty( $membership_plans ) ) : ?>
+					<p>
+						<?php esc_html_e( 'To grant membership access, please', WC_Memberships::TEXT_DOMAIN ); ?> <a target="_blank" href="<?php echo admin_url( 'post-new.php?post_type=wc_membership_plan' ); ?>"><?php esc_html_e( 'Add a Membership Plan', WC_Memberships::TEXT_DOMAIN ); ?></a>.
+					</p>
+				<?php else : ?>
 
-          <?php if ( SV_WC_Plugin_Compatibility::is_wc_version_gte_2_3() ) : ?>
-            <input type="hidden" class="js-membership-plan-ids" style="width: 50%;" id="_wc_memberships_membership_plan_ids" name="_wc_memberships_membership_plan_ids" data-placeholder="<?php esc_attr_e( 'Search for a membership plan&hellip;', WC_Memberships::TEXT_DOMAIN ); ?>" data-action="wc_memberships_search_membership_plans" data-multiple="true" data-selected="<?php
-              $json_ids = array();
+					<p class="form-field"><label for="_wc_memberships_membership_plan_ids"><?php esc_html_e( 'Purchasing grants access to', WC_Memberships::TEXT_DOMAIN ); ?></label>
 
-              if ( ! empty( $grant_access_to_plans ) ) {
-                foreach ( $grant_access_to_plans as $plan ) {
+					<?php if ( SV_WC_Plugin_Compatibility::is_wc_version_gte_2_3() ) : ?>
+						<input type="hidden" class="js-membership-plan-ids" style="width: 50%;" id="_wc_memberships_membership_plan_ids" name="_wc_memberships_membership_plan_ids" data-placeholder="<?php esc_attr_e( 'Search for a membership plan&hellip;', WC_Memberships::TEXT_DOMAIN ); ?>" data-action="wc_memberships_search_membership_plans" data-multiple="true" data-selected="<?php
+							$json_ids = array();
 
-                  if ( is_object( $plan ) ) {
-                    $json_ids[ $plan->get_id() ] = wp_kses_post( html_entity_decode( $plan->get_name() ) );
-                  }
-                }
-              }
+							if ( ! empty( $grant_access_to_plans ) ) {
+								foreach ( $grant_access_to_plans as $plan ) {
 
-              echo esc_attr( wc_memberships()->wp_json_encode( $json_ids ) );
-            ?>" value="<?php echo esc_attr( implode( ',', array_keys( $json_ids ) ) ); ?>" />
+									if ( is_object( $plan ) ) {
+										$json_ids[ $plan->get_id() ] = wp_kses_post( html_entity_decode( $plan->get_name() ) );
+									}
+								}
+							}
 
-          <?php else : ?>
-            <select name="_wc_memberships_membership_plan_ids[]" class="js-membership-plan-ids" id="_wc_memberships_membership_plan_ids" multiple="multiple" data-placeholder="<?php esc_attr_e( 'Search for a membership plan&hellip;', WC_Memberships::TEXT_DOMAIN ); ?>">
-              <?php
-                if ( ! empty( $grant_access_to_plans ) ) {
-                  foreach ( $grant_access_to_plans as $plan ) {
-                    echo '<option value="' . esc_attr( $plan->get_id() ) . '" selected="selected">' . esc_html( $plan->get_name() ) . '</option>';
-                  }
-                }
-              ?>
-            </select>
-          <?php endif; ?>
+							echo esc_attr( wc_memberships()->wp_json_encode( $json_ids ) );
+						?>" value="<?php echo esc_attr( implode( ',', array_keys( $json_ids ) ) ); ?>" />
 
-          <img class="help_tip" data-tip="<?php esc_attr_e( 'Select which membership plans does purchasing this product grant access tp.', WC_Memberships::TEXT_DOMAIN ) ?>" src="<?php echo esc_url( WC()->plugin_url() ); ?>/assets/images/help.png" height="16" width="16" /></p>
+					<?php else : ?>
+						<select name="_wc_memberships_membership_plan_ids[]" class="js-membership-plan-ids" id="_wc_memberships_membership_plan_ids" multiple="multiple" data-placeholder="<?php esc_attr_e( 'Search for a membership plan&hellip;', WC_Memberships::TEXT_DOMAIN ); ?>">
+							<?php
+								if ( ! empty( $grant_access_to_plans ) ) {
+									foreach ( $grant_access_to_plans as $plan ) {
+										echo '<option value="' . esc_attr( $plan->get_id() ) . '" selected="selected">' . esc_html( $plan->get_name() ) . '</option>';
+									}
+								}
+							?>
+						</select>
+					<?php endif; ?>
 
-        </div>
+					<img class="help_tip" data-tip="<?php esc_attr_e( 'Select which membership plans does purchasing this product grant access tp.', WC_Memberships::TEXT_DOMAIN ) ?>" src="<?php echo esc_url( WC()->plugin_url() ); ?>/assets/images/help.png" height="16" width="16" /></p>
 
-        <?php
+					<p>
+						<em><?php esc_html_e( 'Need to add or edit a plan?', WC_Memberships::TEXT_DOMAIN ); ?></em> <a target="_blank" href="<?php echo admin_url( 'edit.php?post_type=wc_membership_plan' ); ?>"><?php esc_html_e( 'Manage Membership Plans', WC_Memberships::TEXT_DOMAIN ); ?></a>
+					</p>
+
+				<?php endif; ?>
+
+				</div>
+
+				<?php
 					/**
 					 * Fires after the product memberships data grant access panel is displayed
 					 *

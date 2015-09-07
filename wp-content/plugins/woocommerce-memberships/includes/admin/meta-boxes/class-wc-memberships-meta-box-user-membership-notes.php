@@ -122,18 +122,7 @@ class WC_Memberships_Meta_Box_User_Membership_Notes extends WC_Memberships_Meta_
 
 				$note_classes = get_comment_meta( $note->comment_ID, 'notified', true ) ? array( 'notified', 'note' ) : array( 'note' );
 
-				?>
-				<li rel="<?php echo absint( $note->comment_ID ); ?>" class="<?php echo implode( ' ', array_map( 'sanitize_html_class', $note_classes ) ); ?>">
-					<div class="note-content">
-						<?php echo wpautop( wptexturize( wp_kses_post( $note->comment_content ) ) ); ?>
-					</div>
-					<p class="meta">
-						<abbr class="exact-date" title="<?php echo esc_attr( $note->comment_date ); ?>"><?php printf( esc_html__( 'added on %1$s at %2$s', WC_Memberships::TEXT_DOMAIN ), date_i18n( wc_date_format(), strtotime( $note->comment_date ) ), date_i18n( wc_time_format(), strtotime( $note->comment_date ) ) ); ?></abbr>
-						<?php if ( $note->comment_author !== __( 'WooCommerce', WC_Memberships::TEXT_DOMAIN ) ) printf( ' ' . esc_html__( 'by %s', WC_Memberships::TEXT_DOMAIN ), $note->comment_author ); ?>
-						<a href="#" class="delete-note js-delete-note"><?php esc_html_e( 'Delete note', WC_Memberships::TEXT_DOMAIN ); ?></a>
-					</p>
-				</li>
-				<?php
+				include('views/html-membership-note.php');
 			}
 
 		} else {

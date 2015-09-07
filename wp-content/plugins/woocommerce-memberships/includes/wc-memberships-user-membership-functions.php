@@ -107,3 +107,125 @@ function wc_memberships_is_user_active_member( $user_id = null, $plan ) {
 function wc_memberships_is_user_member( $user_id = null, $plan ) {
 	return wc_memberships()->user_memberships->is_user_member( $user_id, $plan );
 }
+
+
+/**
+ * Create a new user membership programmatically
+ *
+ * Returns a new user membership object on success which can then be used to add additional data.
+ *
+ * @since 1.3.0
+ * @param array $args Array of arguments
+ * @param string $action Action - either 'create' or 'renew'. When in doubt, use 'create'
+ * @return WC_Memberships_User_Membership on success, WP_Error on failure
+ */
+function wc_memberships_create_user_membership( $args = array(), $action = 'create' ) {
+
+	$defaults = array(
+		'user_membership_id' => 0,
+		'plan_id'            => 0,
+		'user_id'            => 0,
+		'product_id'         => 0,
+		'order_id'           => 0,
+	);
+
+	$args = wp_parse_args( $args, $defaults );
+
+	$data	= array(
+		'post_parent'    => $args['plan_id'],
+		'post_author'    => $args['user_id'],
+		'post_type'      => 'wc_user_membership',
+		'post_status'    => 'wcm-active',
+		'comment_status' => 'open',
+	);
+
+	if ( $args['user_membership_id'] > 0 ) {
+		$updating   = true;
+		$data['ID'] = $args['user_membership_id'];
+	} else {
+		$updating = false;
+	}
+
+	/**
+	 * Filter new membership data, used when a product purchase grants access
+	 *
+	 * @param array $data
+	 * @param array $args
+	 */
+	$data = apply_filters( 'wc_memberships_new_membership_data', $data, array(
+		'user_id'    => $args['user_id'],
+		'product_id' => $args['product_id'],
+		'order_id'   => $args['order_id'],
+	) );
+
+	if ( $updating ) {
+		$user_membership_id = wp_update_post( $data );
+	} else {
+		$user_membership_id = wp_insert_post( $data );
+	}
+
+	// Bail out on error
+	if ( is_wp_error( $user_membership_id ) ) {
+		return $user_membership_id;
+	}
+
+
+	// Save/update product and order id that granted access
+	if ( $args['product_id'] > 0 ) {
+		update_post_meta( $user_membership_id, '_product_id', $args['product_id'] );
+	}
+
+	if ( $args['order_id'] > 0 ) {
+		update_post_meta( $user_membership_id, '_order_id',   $args['order_id'] );
+	}
+
+
+	// Save/update the membership start date, but only if the membership
+	// is not active, ie is not being renewed early.
+	if ( 'renew' != $action ) {
+		update_post_meta( $user_membership_id, '_start_date', current_time( 'mysql', true ) );
+	}
+
+
+	// Get the membership plan object so we can calculate end time
+	$plan = wc_memberships_get_membership_plan( $args['plan_id'] );
+
+	// Calculate membership end date based on membership length, optionally
+	// from the existing end date, if renewing early
+	$end_date = '';
+
+	if ( $plan->get_access_length_amount() ) {
+
+		// Early renewals add to the existing membership length, normal
+		// cases calculate membership length from now
+		$now = 'renew' == $action
+					 ? strtotime( get_post_meta( $user_membership_id, '_end_date', true ) )
+					 : current_time( 'timestamp' );
+
+		if ( strpos( $plan->get_access_length_period(), 'month' ) !== false ) {
+			$end = wc_memberships()->add_months( $now, $plan->get_access_length_amount() );
+		} else {
+			$end = strtotime( '+ ' . $plan->get_access_length(), $now );
+		}
+
+		$end_date = date( 'Y-m-d H:i:s', $end );
+	}
+
+	// Save/update end date
+	$user_membership = wc_memberships_get_user_membership( $user_membership_id );
+	$user_membership->set_end_date( $end_date );
+
+	/**
+	 * Fires after a user has been granted membership access
+	 *
+	 * @since 1.3.0
+	 * @param WC_Memberships_Membership_Plan $membership_plan The plan that user was granted access to
+	 * @param array $args
+	 */
+	do_action( 'wc_memberships_user_membership_created', $plan, array(
+		'user_id'            => $args['user_id'],
+		'user_membership_id' => $user_membership->get_id(),
+	) );
+
+	return $user_membership;
+}

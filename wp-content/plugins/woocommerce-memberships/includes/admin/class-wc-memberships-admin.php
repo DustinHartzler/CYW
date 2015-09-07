@@ -94,6 +94,12 @@ class WC_Memberships_Admin {
 
 		// Display admin messages
 		add_action( 'admin_notices', array( $this, 'show_admin_messages' ) );
+
+		// Remove User Membership from Admin Bar -> New...
+		add_action( 'admin_bar_menu', array( $this, 'admin_bar_menu' ), 9999 );
+
+		// Duplicate memberships settings for products
+		add_action( 'woocommerce_duplicate_product', array( $this, 'duplicate_product_memberships_data' ), 10, 2 );
 	}
 
 
@@ -431,7 +437,10 @@ class WC_Memberships_Admin {
 			 * @since 1.0.0
 			 * @param array $post_types List of post types to exclude
 			 */
-			$excluded_post_types = apply_filters( 'wc_memberships_content_restriction_excluded_post_types', array( 'attachment' ) );
+			$excluded_post_types = apply_filters( 'wc_memberships_content_restriction_excluded_post_types', array(
+				'attachment',
+				'wooframework',
+			) );
 
 			$this->valid_post_types_for_content_restriction = array();
 
@@ -819,9 +828,7 @@ class WC_Memberships_Admin {
 
 		}
 
-		if ( ! empty( $rules ) ) {
-			update_option( 'wc_memberships_rules', array_values( $rules ) );
-		}
+		update_option( 'wc_memberships_rules', ! empty( $rules ) ? array_values( $rules ) : array() );
 	}
 
 
@@ -845,6 +852,100 @@ class WC_Memberships_Admin {
 			update_post_meta( $post_id, "_wc_memberships_{$message_type}_message", $message );
 			update_post_meta( $post_id, "_wc_memberships_use_custom_{$message_type}_message", $use_custom );
 		}
+	}
+
+
+	/**
+	 * Remove New User Membership menu option from Admin Bar
+	 *
+	 * @since 1.3.0
+	 * @param WP_Admin_Bar $admin_bar WP_Admin_Bar instance, passed by reference
+	 */
+	public function admin_bar_menu( $admin_bar ) {
+		$admin_bar->remove_menu( 'new-wc_user_membership' );
+	}
+
+
+	/**
+	 * Duplicate memberships data for a product
+	 *
+	 * @since 1.3.0
+	 * @param int $new_id
+	 * @param object $post
+	 */
+	public function duplicate_product_memberships_data( $new_id, $post ) {
+
+
+		// Get product restriction rules
+		$product_restriction_rules = wc_memberships()->rules->get_rules( array(
+			'rule_type'         => 'product_restriction',
+			'object_id'         => $post->ID,
+			'content_type'      => 'post_type',
+			'content_type_name' => $post->post_type,
+			'exclude_inherited' => true,
+			'plan_status'       => 'any',
+		));
+
+		// Get purchasing discount rules
+		$purchasing_discount_rules = wc_memberships()->rules->get_rules( array(
+			'rule_type'         => 'purchasing_discount',
+			'object_id'         => $post->ID,
+			'content_type'      => 'post_type',
+			'content_type_name' => $post->post_type,
+			'exclude_inherited' => true,
+			'plan_status'       => 'any',
+		));
+
+		$product_rules = array_merge( $product_restriction_rules, $purchasing_discount_rules );
+
+		// Duplicate rules
+		if ( ! empty( $product_rules ) ) {
+
+			$all_rules = get_option( 'wc_memberships_rules' );
+
+			foreach ( $product_rules as $rule ) {
+
+				$new_rule               = $rule->get_raw_data();
+				$new_rule['object_ids'] = array( $new_id );
+				$all_rules[]            = $new_rule;
+			}
+
+			update_option( 'wc_memberships_rules', $all_rules );
+		}
+
+
+		// Duplicate custom messages
+		foreach ( array( 'product_viewing_restricted', 'product_purchasing_restricted' ) as $message_type ) {
+
+			$message    = get_post_meta( $post->ID, "_wc_memberships_{$message_type}_message", true );
+			$use_custom = get_post_meta( $post->ID, "_wc_memberships_use_custom_{$message_type}_message", true );
+
+			if ( $message ) {
+				update_post_meta( $new_id, "_wc_memberships_{$message_type}_message", $message );
+			}
+
+			if ( $use_custom ) {
+				update_post_meta( $new_id, "_wc_memberships_use_custom_{$message_type}_message", $use_custom );
+			}
+		}
+
+
+		// Duplicate 'grants access to'
+		foreach ( wc_memberships_get_membership_plans() as $plan ) {
+
+			if ( $plan->has_product( $post->ID ) ) {
+
+				$product_ids   = get_post_meta( $plan->get_id(), '_product_ids', true );
+				$product_ids[] = $new_id;
+
+				update_post_meta( $plan->get_id(), '_product_ids', $product_ids );
+			}
+		}
+
+
+		// Duplicate other settings
+		update_post_meta( $new_id, '_wc_memberships_force_public', get_post_meta( $post->ID, '_wc_memberships_force_public', true ) );
+
 	}
 
 

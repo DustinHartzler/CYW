@@ -69,9 +69,15 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 		</tr>
 	</thead>
 
-	<?php foreach ( $content_restriction_rules as $index => $rule ) {
-		require( wc_memberships()->get_plugin_path() . '/includes/admin/meta-boxes/views/html-content-restriction-rule.php' );
-	} ?>
+	<?php
+		foreach ( $content_restriction_rules as $index => $rule ) {
+			require( wc_memberships()->get_plugin_path() . '/includes/admin/meta-boxes/views/html-content-restriction-rule.php' );
+		}
+	?>
+
+	<?php
+		$membership_plans = wc_memberships_get_membership_plans( array( 'post_status' => array( 'publish', 'private', 'future', 'draft', 'pending', 'trash' ) ) );
+	?>
 
 	<tbody class="norules <?php if ( count( $content_restriction_rules ) > 1 ) : ?>hide<?php endif; ?>">
 		<tr>
@@ -79,12 +85,17 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 				<?php if ( 'wc_membership_plan' == $post->post_type ) : ?>
 					<?php esc_html_e( 'There are no rules yet. Click below to add one.', WC_Memberships::TEXT_DOMAIN ); ?>
 				<?php else : ?>
-					<?php esc_html_e( 'This content can be viewed by all visitors. Add a rule to restrict it to members.', WC_Memberships::TEXT_DOMAIN ); ?>
+					<?php if ( empty( $membership_plans ) ) : ?>
+						<?php esc_html_e( 'To create restriction rules, please', WC_Memberships::TEXT_DOMAIN ); ?> <a target="_blank" href="<?php echo admin_url( 'post-new.php?post_type=wc_membership_plan' ); ?>"><?php esc_html_e( 'Add a Membership Plan', WC_Memberships::TEXT_DOMAIN ); ?></a>.
+					<?php else : ?>
+						<?php esc_html_e( 'This content can be viewed by all visitors. Add a rule to restrict it to members.', WC_Memberships::TEXT_DOMAIN ); ?>
+					<?php endif; ?>
 				<?php endif; ?>
 			</td>
 		</tr>
 	</tbody>
 
+	<?php if ( 'wc_membership_plan' == $post->post_type || ! empty( $membership_plans ) ) : ?>
 	<tfoot>
 		<tr>
 			<th colspan="<?php echo ( 'wc_membership_plan' == $post->post_type ) ? 4 : 3; ?>">
@@ -93,5 +104,6 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 			</th>
 		</tr>
 	</tfoot>
+	<?php endif; ?>
 
 </table>

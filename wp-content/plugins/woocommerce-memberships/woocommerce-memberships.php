@@ -5,7 +5,7 @@
  * Description: Sell memberships that provide access to restricted content, products, discounts, and more!
  * Author: WooThemes / SkyVerge
  * Author URI: http://www.woothemes.com/
- * Version: 1.2.0
+ * Version: 1.3.0
  * Text Domain: woocommerce-memberships
  * Domain Path: /i18n/languages/
  *
@@ -54,7 +54,7 @@ class WC_Memberships extends SV_WC_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '1.2.0';
+	const VERSION = '1.3.0';
 
 	/** @var WC_Memberships single instance of this plugin */
 	protected static $instance;
@@ -80,6 +80,9 @@ class WC_Memberships extends SV_WC_Plugin {
 	/** @var \WC_Memberships_Capabilities instance */
 	public $capabilities;
 
+	/** @var \WC_Memberships_Member_Discounts instance */
+	public $member_discounts;
+
 	/** @var \WC_Memberships_AJAX instance */
 	public $ajax;
 
@@ -100,6 +103,9 @@ class WC_Memberships extends SV_WC_Plugin {
 
 	/** @var bool helper for lazy groups active check */
 	private $groups_active;
+
+	/** @var bool helper for lazy bookings active check */
+	private $bookings_active;
 
 
 	/**
@@ -128,9 +134,6 @@ class WC_Memberships extends SV_WC_Plugin {
 		add_action( 'woocommerce_order_status_completed', array( $this, 'grant_membership_access' ), 11 );
 		add_action( 'woocommerce_order_status_processing', array( $this, 'grant_membership_access' ), 11 );
 
-		// Apply purchasing discounts
-		add_filter( 'woocommerce_get_price', array( $this, 'apply_purchasing_discounts' ), 10, 2 );
-
 		// Lifecycle
 		add_action( 'admin_init', array ( $this, 'maybe_activate' ) );
 		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
@@ -150,6 +153,7 @@ class WC_Memberships extends SV_WC_Plugin {
 		require_once( $this->get_plugin_path() . '/includes/class-wc-memberships-membership-plans.php' );
 		require_once( $this->get_plugin_path() . '/includes/class-wc-memberships-user-memberships.php' );
 		require_once( $this->get_plugin_path() . '/includes/class-wc-memberships-capabilities.php' );
+		require_once( $this->get_plugin_path() . '/includes/class-wc-memberships-member-discounts.php' );
 
 		// Global functions
 		require_once( $this->get_plugin_path() . '/includes/wc-memberships-membership-plan-functions.php' );
@@ -160,6 +164,7 @@ class WC_Memberships extends SV_WC_Plugin {
 		$this->plans            = new WC_Memberships_Membership_Plans();
 		$this->user_memberships = new WC_Memberships_User_Memberships();
 		$this->capabilities     = new WC_Memberships_Capabilities();
+		$this->member_discounts = new WC_Memberships_Member_Discounts();
 
 		// Frontend includes
 		if ( ! is_admin() ) {
@@ -253,6 +258,10 @@ class WC_Memberships extends SV_WC_Plugin {
 
 		if ( $this->is_groups_active() ) {
 			require_once( $this->get_plugin_path() . '/includes/integrations/class-wc-memberships-integration-groups.php' );
+		}
+
+		if ( $this->is_bookings_active() ) {
+			require_once( $this->get_plugin_path() . '/includes/integrations/class-wc-memberships-integration-bookings.php' );
 		}
 	}
 
@@ -410,54 +419,6 @@ class WC_Memberships extends SV_WC_Plugin {
 			$plan->grant_access_from_purchase( $user_id, $product_id, $order_id );
 		}
 
-	}
-
-
-	/**
-	 * Apply purchasing discounts to product price
-	 *
-	 * @since 1.0.0
-	 * @param string|float $price
-	 * @param WC_Product $product
-	 * @return float|string
-	 */
-	public function apply_purchasing_discounts( $price, $product ) {
-
-		if ( ! is_user_logged_in() ) {
-			return $price;
-		}
-
-		$product_id = $product->is_type( 'variation' ) ? $product->variation_id : $product->id;
-
-		$discount_rules = wc_memberships()->rules->get_user_product_purchasing_discount_rules( get_current_user_id(), $product_id );
-
-		if ( ! empty( $discount_rules ) ) {
-
-			$discounted_price = $price;
-
-			foreach ( $discount_rules as $rule ) {
-
-				switch ( $rule->get_discount_type() ) {
-
-					case 'percentage':
-						$discounted_price = $price * ( 100 - $rule->get_discount_amount() ) / 100;
-						break;
-
-					case 'amount':
-						$discounted_price = max( $price - $rule->get_discount_amount(), 0 );
-						break;
-				}
-
-				// Make sure that the lowest price gets applied
-				if ( $discounted_price < $price ) {
-					$price = $discounted_price;
-				}
-
-			}
-
-		}
-
-		return $price;
 	}
 
 
@@ -748,6 +709,22 @@ class WC_Memberships extends SV_WC_Plugin {
 		}
 
 		return $this->groups_active = $this->is_plugin_active( 'groups.php' );
+	}
+
+
+	/**
+	 * Checks is Bookings is active
+	 *
+	 * @since 1.3.0
+	 * @return bool true if the WooCommerce Bookings plugin is active, false if not active
+	 */
+	public function is_bookings_active() {
+
+		if ( is_bool( $this->bookings_active ) ) {
+			return $this->bookings_active;
+		}
+
+		return $this->bookings_active = $this->is_plugin_active( 'woocommmerce-bookings.php' );
 	}
 
 

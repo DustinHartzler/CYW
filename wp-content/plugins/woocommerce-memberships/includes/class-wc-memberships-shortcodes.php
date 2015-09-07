@@ -44,7 +44,7 @@ class WC_Memberships_Shortcodes {
 
 		$shortcodes = array(
 			'wcm_restrict'           => __CLASS__ . '::restrict',
-			'wcm_nonmember'			 => __CLASS__ . '::nonmember',
+			'wcm_nonmember'          => __CLASS__ . '::nonmember',
 			'wcm_content_restricted' => __CLASS__ . '::content_restricted',
 		);
 
@@ -75,13 +75,19 @@ class WC_Memberships_Shortcodes {
 			$atts['plans'] = array_map( 'trim', explode( ',', $atts['plans'] ) );
 		}
 
+		if ( isset( $atts['start_after_trial'] ) ) {
+			$atts['start_after_trial'] = 'yes' == $atts['start_after_trial'];
+		}
+
 		$atts = shortcode_atts( array(
-			'plans' => null,
+			'plans'             => null,
+			'delay'             => null,
+			'start_after_trial' => false,
 		), $atts );
 
 		ob_start();
 
-		wc_memberships_restrict( do_shortcode( $content ), $atts['plans'] );
+		wc_memberships_restrict( do_shortcode( $content ), $atts['plans'], $atts['delay'], $atts['start_after_trial'] );
 
 		return ob_get_clean();
 	}

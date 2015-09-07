@@ -47,7 +47,7 @@ class WC_Memberships_Capabilities {
 	public function __construct() {
 
 		// Adjust user capabilities
-		add_filter( 'user_has_cap', array( $this, 'user_has_cap' ), 11, 3 );
+		add_filter( 'user_has_cap', array( $this, 'user_has_cap' ), 9, 3 );
 	}
 
 
@@ -99,7 +99,7 @@ class WC_Memberships_Capabilities {
 					$user_id = $args[1];
 					$post_id = $args[2];
 
-					if ( 'yes' == get_post_meta( $post_id, '_wc_memberships_force_public', true ) ) {
+					if ( $this->post_is_public( $post_id ) ) {
 						$allcaps[ $caps[0] ] = true;
 						break;
 					}
@@ -120,7 +120,7 @@ class WC_Memberships_Capabilities {
 					$user_id = $args[1];
 					$post_id = $args[2];
 
-					if ( 'yes' == get_post_meta( $post_id, '_wc_memberships_force_public', true ) ) {
+					if ( $this->post_is_public( $post_id ) ) {
 						$allcaps[ $caps[0] ] = true;
 						break;
 					}
@@ -141,7 +141,7 @@ class WC_Memberships_Capabilities {
 					$user_id = $args[1];
 					$post_id = $args[2];
 
-					if ( 'yes' == get_post_meta( $post_id, '_wc_memberships_force_public', true ) ) {
+					if ( $this->post_is_public( $post_id ) ) {
 						$allcaps[ $caps[0] ] = true;
 						break;
 					}
@@ -288,7 +288,7 @@ class WC_Memberships_Capabilities {
 					$post_id    = $args[2];
 					$has_access = false;
 
-					if ( 'yes' == get_post_meta( $post_id, '_wc_memberships_force_public', true ) ) {
+					if ( $this->post_is_public( $post_id ) ) {
 						$allcaps[ $caps[0] ] = true;
 						break;
 					}
@@ -315,7 +315,7 @@ class WC_Memberships_Capabilities {
 					$post_id    = $args[2];
 					$has_access = false;
 
-					if ( 'yes' == get_post_meta( $post_id, '_wc_memberships_force_public', true ) ) {
+					if ( $this->post_is_public( $post_id ) ) {
 						$allcaps[ $caps[0] ] = true;
 						break;
 					}
@@ -407,6 +407,27 @@ class WC_Memberships_Capabilities {
 		}
 
 		return $allcaps;
+	}
+
+
+	/**
+	 * Returns true if the given post has been forced public and thus not subject
+	 * to restrictions
+	 *
+	 * @since 1.3.0
+	 * @param int|string $post_id post or product (parent/variation) ID
+	 * @return bool true if the post is public, false otherwise
+	 */
+	protected function post_is_public( $post_id ) {
+
+		$post_type = get_post_type( $post_id );
+
+		// products can only be forced public at the parent product level
+		if ( 'product_variation' === $post_type ) {
+			$post_id = wp_get_post_parent_id( $post_id );
+		}
+
+		return 'yes' === get_post_meta( $post_id, '_wc_memberships_force_public', true );
 	}
 
 

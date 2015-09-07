@@ -65,10 +65,6 @@ class WC_Memberships_Frontend {
 		// Show memberships on my account dashboard
 		add_action( 'woocommerce_before_my_account', array( $this, 'my_account_memberships' ) );
 
-		// Member discount badges
-		add_action( 'woocommerce_before_shop_loop_item_title',   'wc_memberships_show_product_loop_member_discount_badge', 10 );
-		add_action( 'woocommerce_before_single_product_summary', 'wc_memberships_show_product_member_discount_badge', 10 );
-
 	}
 
 

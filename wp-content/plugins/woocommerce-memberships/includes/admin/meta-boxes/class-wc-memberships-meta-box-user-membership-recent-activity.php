@@ -109,20 +109,7 @@ class WC_Memberships_Meta_Box_User_Membership_Recent_Activity extends WC_Members
 				$plan_name    = $plan ? $plan->get_name() : __( '[Plan removed]', WC_Memberships::TEXT_DOMAIN );
 				$note_classes = get_comment_meta( $note->comment_ID, 'notified', true ) ? array( 'notified', 'note' ) : array( 'note' );
 
-				?>
-				<li rel="<?php echo absint( $note->comment_ID ) ; ?>" class="<?php echo implode( ' ', array_map( 'sanitize_html_class', $note_classes ) ); ?>">
-					<div class="note-content">
-						<?php
-							/* translators: Placeholders represent membership plan name and a note. Example "Gold: Membership cancelled" */
-							echo wpautop( sprintf( __( '%s: %s', WC_Memberships::TEXT_DOMAIN ), wp_kses_post( $plan_name ), wptexturize( wp_kses_post( $note->comment_content ) ) ) );
-						?>
-					</div>
-					<p class="meta">
-						<abbr class="exact-date" title="<?php echo esc_attr( $note->comment_date ); ?>"><?php printf( esc_html__( 'On %1$s at %2$s', WC_Memberships::TEXT_DOMAIN ), date_i18n( wc_date_format(), strtotime( $note->comment_date ) ), date_i18n( wc_time_format(), strtotime( $note->comment_date ) ) ); ?></abbr>
-						<?php if ( $note->comment_author !== __( 'WooCommerce', WC_Memberships::TEXT_DOMAIN ) ) printf( ' ' . esc_html__( 'by %s', WC_Memberships::TEXT_DOMAIN ), $note->comment_author ); ?>
-					</p>
-				</li>
-				<?php
+				include( 'views/html-membership-recent-activity-note.php' );
 			}
 
 		} else {

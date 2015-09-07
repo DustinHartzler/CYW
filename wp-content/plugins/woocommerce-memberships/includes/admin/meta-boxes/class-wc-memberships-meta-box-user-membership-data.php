@@ -292,6 +292,14 @@ class WC_Memberships_Meta_Box_User_Membership_Data extends WC_Memberships_Meta_B
 		</ul>
 
 		<?php
+
+		// Render JS to have the admin confirm they really do indeed want to permanently
+		// delete a member
+		wc_enqueue_js("
+			jQuery( '.user_membership_actions .submitdelete' ).click( function( e ) {
+				return confirm( '" . esc_html__( 'Are you sure you want to permanently delete this membership?', WC_Memberships::TEXT_DOMAIN ) . "' );
+			} );
+		");
 	}
 
 

@@ -1020,13 +1020,13 @@ class WC_Memberships_Restrictions {
 					// Find taxonomy terms that are either restricted or granted access to
 					elseif ( 'taxonomy' == $rule->get_content_type() && $rule->has_objects() ) {
 
-            $taxonomy = $rule->get_content_type_name();
+						$taxonomy = $rule->get_content_type_name();
 
-            if ( ! isset( $conditions[ $condition ][ 'terms' ][ $taxonomy ] ) ) {
-              $conditions[ $condition ][ 'terms' ][ $taxonomy ] = array();
-            }
+						if ( ! isset( $conditions[ $condition ][ 'terms' ][ $taxonomy ] ) ) {
+							$conditions[ $condition ][ 'terms' ][ $taxonomy ] = array();
+						}
 
-            $conditions[ $condition ][ 'terms' ][ $taxonomy ] = array_unique( array_merge( $conditions[ $condition ][ 'terms' ][ $taxonomy ], $rule->get_object_ids() ) );
+						$conditions[ $condition ][ 'terms' ][ $taxonomy ] = array_unique( array_merge( $conditions[ $condition ][ 'terms' ][ $taxonomy ], $rule->get_object_ids() ) );
 					}
 
 					elseif ( 'taxonomy' == $rule->get_content_type() ) {
@@ -1083,7 +1083,7 @@ class WC_Memberships_Restrictions {
 			// content types are high-level restriction items - posts, post_types, terms, and taxonomies
 			foreach ( $conditions['restricted'] as $content_type => $object_types ) {
 
-				if ( empty( $conditions['granted'][ $content_type ] ) ) {
+				if ( empty( $conditions['granted'][ $content_type ] ) || empty( $object_types ) ) {
 					continue;
 				}
 
@@ -1091,15 +1091,25 @@ class WC_Memberships_Restrictions {
 				// for a term content type, object types are taxonomy names (e.g. category)
 				foreach ( $object_types as $object_type_name => $object_ids ) {
 
-					if ( empty( $conditions['granted'][ $content_type ][ $object_type_name ] ) ) {
+					if ( empty( $conditions['granted'][ $content_type ][ $object_type_name ] ) || empty( $object_ids ) ) {
 						continue;
 					}
 
-					// if the restricted object ID is also granted, remove it from restrictions
-					foreach ( $object_ids as $object_id_index => $object_id ) {
+					if ( is_array( $object_ids ) ) {
 
-						if ( in_array( $object_id, $conditions['granted'][ $content_type ][ $object_type_name ] ) ) {
-							unset( $conditions['restricted'][ $content_type ][ $object_type_name ][ $object_id_index ] );
+						// if the restricted object ID is also granted, remove it from restrictions
+						foreach ( $object_ids as $object_id_index => $object_id ) {
+
+							if ( in_array( $object_id, $conditions['granted'][ $content_type ][ $object_type_name ] ) ) {
+								unset( $conditions['restricted'][ $content_type ][ $object_type_name ][ $object_id_index ] );
+							}
+						}
+
+					} else {
+
+						// post type handling
+						if ( in_array( $object_ids, $conditions['granted'][ $content_type ] ) ) {
+							unset( $conditions['restricted'][ $content_type ][ array_search( $object_ids, $conditions['restricted'][ $content_type ] ) ] );
 						}
 					}
 				}

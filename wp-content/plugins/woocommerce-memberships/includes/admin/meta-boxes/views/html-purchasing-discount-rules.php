@@ -82,10 +82,17 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 	<tbody class="norules <?php if ( count( $purchasing_discount_rules ) > 1 ) : ?>hide<?php endif; ?>">
 		<tr>
-			<td colspan="<?php echo ( 'wc_membership_plan' == $post->post_type ) ? 6 : 5; ?>"><?php _e( "There are no discounts yet. Click below to add one.", WC_Memberships::TEXT_DOMAIN ); ?></td>
+			<td colspan="<?php echo ( 'wc_membership_plan' == $post->post_type ) ? 6 : 5; ?>">
+			<?php if ( 'wc_membership_plan' == $post->post_type || ! empty( $membership_plans ) ) : ?>
+				<?php _e( "There are no discounts yet. Click below to add one.", WC_Memberships::TEXT_DOMAIN ); ?>
+			<?php else: ?>
+				<?php esc_html_e( 'To create member discounts, please', WC_Memberships::TEXT_DOMAIN ); ?> <a target="_blank" href="<?php echo admin_url( 'post-new.php?post_type=wc_membership_plan' ); ?>"><?php esc_html_e( 'Add a Membership Plan', WC_Memberships::TEXT_DOMAIN ); ?></a>.
+			<?php endif; ?>
+			</td>
 		</tr>
 	</tbody>
 
+	<?php if ( 'wc_membership_plan' == $post->post_type || ! empty( $membership_plans ) ) : ?>
 	<tfoot>
 		<tr>
 			<th colspan="<?php echo ( 'wc_membership_plan' == $post->post_type ) ? 6 : 5; ?>">
@@ -94,5 +101,6 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 			</th>
 		</tr>
 	</tfoot>
+	<?php endif; ?>
 
 </table>
