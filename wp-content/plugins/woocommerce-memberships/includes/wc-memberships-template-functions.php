@@ -133,8 +133,16 @@ if ( ! function_exists( 'wc_memberships_restrict' ) ) {
 			} else {
 				$message = __( 'This content is part of your membership, but not yet! You will gain access on {date}', WC_Memberships::TEXT_DOMAIN );
 
+				// Apply the deprecated filter
+				if ( has_filter( 'get_content_delayed_message' ) ) {
+					/** This filter is documented in includes/frontend/class-wc-memberships-frontend.php **/
+					$message = apply_filters( 'get_content_delayed_message', $message, null, $access_time );
+					// Notify developers that this filter is deprecated
+					_deprecated_function( 'The get_content_delayed_message filter', '1.3.1', 'wc_memberships_get_content_delayed_message' );
+				}
+
 				/** This filter is documented in includes/frontend/class-wc-memberships-frontend.php **/
-				$message = apply_filters( 'get_content_delayed_message', $message, null, $access_time );
+				$message = apply_filters( 'wc_memberships_get_content_delayed_message', $message, null, $access_time );
 				$message = str_replace( '{date}', date_i18n( get_option( 'date_format' ), $access_time ), $message );
 				$output  = '<div class="wc-memberships-content-delayed-message">' . $message . '</div>';
 

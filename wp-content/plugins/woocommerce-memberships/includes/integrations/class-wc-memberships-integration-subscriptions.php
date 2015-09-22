@@ -170,7 +170,7 @@ class WC_Memberships_Integration_Subscriptions {
 
 		$user_memberships = null;
 
-		$user_membership_id = $wpdb->get_col( $wpdb->prepare( "
+		$user_membership_ids = $wpdb->get_col( $wpdb->prepare( "
 			SELECT post_id
 			FROM $wpdb->postmeta pm
 			RIGHT JOIN $wpdb->posts p ON pm.post_id = p.ID

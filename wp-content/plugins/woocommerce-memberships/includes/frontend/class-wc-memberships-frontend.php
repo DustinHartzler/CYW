@@ -367,6 +367,11 @@ class WC_Memberships_Frontend {
 				continue;
 			}
 
+			// Skip inactive purchasing discount rules
+			if ( 'purchasing_discount' == $rule->get_rule_type() && ! $rule->is_active() ) {
+				continue;
+			}
+
 			$plan = wc_memberships_get_membership_plan( $rule->get_membership_plan_id() );
 
 			if ( $plan && $plan->has_products() ) {
@@ -585,16 +590,34 @@ class WC_Memberships_Frontend {
 
 		}
 
+		// Apply the deprecated filter
+		if ( has_filter( 'get_content_delayed_message' ) ) {
+
+			/**
+			 * Filter the delayed content message
+			 *
+			 * @since 1.0.0
+			 * @deprecated 1.3.1
+			 * @param string $message Delayed content message
+			 * @param int $post_id Post ID that the message applies to
+			 * @param string $access_time Access time timestamp
+			 */
+			$message = apply_filters( 'get_content_delayed_message', $message, $post_id, $access_time );
+
+			// Notify developers that this filter is deprecated
+			_deprecated_function( 'The get_content_delayed_message filter', '1.3.1', 'wc_memberships_get_content_delayed_message' );
+		}
 
 		/**
 		 * Filter the delayed content message
 		 *
-		 * @since 1.0.0
+		 * @since 1.3.1
 		 * @param string $message Delayed content message
 		 * @param int $post_id Post ID that the message applies to
 		 * @param string $access_time Access time timestamp
 		 */
-		$message = apply_filters( 'get_content_delayed_message', $message, $post_id, $access_time );
+		$message = apply_filters( 'wc_memberships_get_content_delayed_message', $message, $post_id, $access_time );
+
 		$message = str_replace( '{date}', date_i18n( get_option( 'date_format' ), $access_time ), $message );
 
 		return $message;

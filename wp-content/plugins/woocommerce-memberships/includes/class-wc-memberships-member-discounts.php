@@ -77,7 +77,7 @@ class WC_Memberships_Member_Discounts {
 
 		$discounted_price = $this->get_discounted_price( $price, $product );
 
-		if ( $discounted_price ) {
+		if ( is_numeric( $discounted_price ) ) {
 			$price = $discounted_price;
 		}
 
@@ -380,7 +380,7 @@ class WC_Memberships_Member_Discounts {
 
 		$discounted_price = $this->get_discounted_price( $base_price, $product, $user_id );
 
-		return (bool) $discounted_price;
+		return is_numeric( $discounted_price );
 	}
 
 

@@ -5,7 +5,7 @@
  * Description: Sell memberships that provide access to restricted content, products, discounts, and more!
  * Author: WooThemes / SkyVerge
  * Author URI: http://www.woothemes.com/
- * Version: 1.3.0
+ * Version: 1.3.1
  * Text Domain: woocommerce-memberships
  * Domain Path: /i18n/languages/
  *
@@ -54,7 +54,7 @@ class WC_Memberships extends SV_WC_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '1.3.0';
+	const VERSION = '1.3.1';
 
 	/** @var WC_Memberships single instance of this plugin */
 	protected static $instance;
