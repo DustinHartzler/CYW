@@ -1,5 +1,12 @@
 *** WooCommerce Memberships Changelog ***
 
+2015.09.22 - version 1.3.2
+ * Tweak - Unpublished, hidden, or non-purchaseable products are no longer shown in the product that grant access portion of the restriction message
+ * Tweak - WooCommerce 2.4.7 compatibility
+ * Tweak - Add "Member Discount" message to single variation prices
+ * Tweak - Add the 'wc_memberships_variation_member_discount_badge' filter
+ * Fix - Duplicate restricted messages when choosing variations
+
 2015.09.16 - version 1.3.1
  * Fix - Correct pricing when a product is 100% discounted
  * Fix - "Want a discount?" notice now only lists plans with active discount rules

@@ -2,7 +2,7 @@
 # This file is distributed under the GNU General Public License v3.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce Memberships 1.3.1\n"
+"Project-Id-Version: WooCommerce Memberships 1.3.2\n"
 "Report-Msgid-Bugs-To: https://support.woothemes.com/hc/\n"
 "POT-Creation-Date: 2014-11-27 15:13:06+00:00\n"
 "MIME-Version: 1.0\n"
@@ -1082,6 +1082,10 @@ msgstr ""
 msgid "Add New Discount"
 msgstr ""
 
+#: includes/class-wc-memberships-member-discounts.php:164
+msgid "%1$sMember discount!%2$s"
+msgstr ""
+
 #: includes/class-wc-memberships-membership-note-email.php:47
 msgid "Membership note"
 msgstr ""
@@ -1387,32 +1391,32 @@ msgstr ""
 msgid "This item is discounted for members. %sLog in%s to claim it."
 msgstr ""
 
-#: includes/frontend/class-wc-memberships-frontend.php:573
+#: includes/frontend/class-wc-memberships-frontend.php:578
 msgid ""
 "This product is part of your membership, but not yet! You will gain access "
 "on {date}"
 msgstr ""
 
-#: includes/frontend/class-wc-memberships-frontend.php:575
+#: includes/frontend/class-wc-memberships-frontend.php:580
 msgid ""
 "This product is part of your membership, but not yet! You can purchase it "
 "on {date}"
 msgstr ""
 
-#: includes/frontend/class-wc-memberships-frontend.php:580
+#: includes/frontend/class-wc-memberships-frontend.php:585
 msgid ""
 "This page is part of your membership, but not yet! You will gain access on "
 "{date}"
 msgstr ""
 
-#: includes/frontend/class-wc-memberships-frontend.php:584
+#: includes/frontend/class-wc-memberships-frontend.php:589
 msgid ""
 "This post is part of your membership, but not yet! You will gain access on "
 "{date}"
 msgstr ""
 
-#: includes/frontend/class-wc-memberships-frontend.php:588
-#: includes/wc-memberships-template-functions.php:134
+#: includes/frontend/class-wc-memberships-frontend.php:593
+#: includes/wc-memberships-template-functions.php:138
 msgid ""
 "This content is part of your membership, but not yet! You will gain access "
 "on {date}"
@@ -1477,98 +1481,98 @@ msgstr ""
 msgid "Membership imported from Group \"%s\" (ID #%d)"
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:253
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:366
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:430
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:238
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:350
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:414
 msgid "Membership cancelled because subscription was trashed."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:257
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:434
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:242
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:418
 msgid "Membership cancelled because subscription was deleted."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:314
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:298
 msgid "Membership free trial activated because subscription was re-activated."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:321
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:305
 msgid "Membership activated because subscription was re-activated."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:330
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:314
 msgid "Membership paused because subscription was put on-hold."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:339
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:323
 msgid "Membership expired because subscription expired."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:348
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:332
 msgid ""
 "Membership marked as pending cancellation because subscription is pending "
 "cancellation."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:357
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:341
 msgid "Membership cancelled because subscription was cancelled."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:967
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:975
 msgid "Free Trial <span class=\"count\">(%s)</span>"
 msgid_plural "Free Trial <span class=\"count\">(%s)</span>"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1063
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1072
 msgid "Subscription not yet ended"
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1067
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1078
 msgid "Subscription:"
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1071
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1082
 msgid "Next Bill On:"
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1072
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1120
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1083
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1131
 #: templates/myaccount/my-memberships.php:63
 msgid "N/A"
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1091
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1116
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1102
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1127
 msgid "Next Bill On"
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1158
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1186
 msgid "Membership will be active while the purchased subscription is active."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1159
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1187
 msgid ""
 "If membership access is granted via the purchase of a subscription, then "
 "membership length will be automatically equal to the length of the "
 "subscription, regardless of the membership length setting above."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1233
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1263
 msgid "Start after trial"
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1335
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1365
 msgid "Membership activated because WooCommerce Subscriptions was activated."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1339
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1369
 msgid ""
 "Membership free trial activated because WooCommerce Subscriptions was "
 "activated."
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1386
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:1416
 msgid "Membership paused because WooCommerce Subscriptions was deactivated."
 msgstr ""
 
@@ -1705,6 +1709,11 @@ msgstr ""
 msgid "http://www.woothemes.com/"
 msgstr ""
 
+#: includes/class-wc-memberships-member-discounts.php:135
+msgctxt "Price range: from-to"
+msgid "%1$s&ndash;%2$s"
+msgstr ""
+
 #: includes/class-wc-memberships-post-types.php:110
 #: includes/class-wc-memberships-post-types.php:143
 msgctxt "Admin menu name"
@@ -1741,7 +1750,7 @@ msgctxt "Membership Status"
 msgid "Cancelled"
 msgstr ""
 
-#: includes/integrations/class-wc-memberships-integration-subscriptions.php:966
+#: includes/integrations/class-wc-memberships-integration-subscriptions.php:974
 msgctxt "Membership Status"
 msgid "Free Trial"
 msgstr ""

@@ -110,21 +110,6 @@ class WC_Memberships_Integration_Subscriptions {
 
 
 	/**
-	 * Check Subscriptions version
-	 *
-	 * Note: edit this if you want to test 2.0+, as 2.0-bleeding has the internal
-	 * version still at 1.5.26 ¯\_(ツ)_/¯
-	 *
-	 * @since 1.0.0
-	 * @return bool True if Subscriptions version is >= 2.0, false otherwise
-	 */
-	private function is_subscriptions_gte_2_0() {
-
-		return version_compare( WC_Subscriptions::$version, '2.0.0', '>=' );
-	}
-
-
-	/**
 	 * Get subscription by order_id and product_id
 	 *
 	 * Compatibility method for supporting both Subscriptions 2.0
@@ -137,7 +122,7 @@ class WC_Memberships_Integration_Subscriptions {
 	 */
 	private function get_order_product_subscription( $order_id, $product_id ) {
 
-		if ( $this->is_subscriptions_gte_2_0() ) {
+		if ( SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
 
 			$subscriptions = wcs_get_subscriptions( array(
 				'order_id'   => $order_id,
@@ -271,8 +256,8 @@ class WC_Memberships_Integration_Subscriptions {
 	 * Handle subscription status change (2.0 and onwards)
 	 *
 	 * @since 1.0.0
-	 * @param int $user_id User ID
-	 * @param string $subscription_key Subscription key
+	 * @param \WC_Subscription $subscription subscription being changed
+	 * @param string $new_status statue changing to
 	 */
 	public function handle_subscription_status_change( WC_Subscription $subscription, $new_status ) {
 
@@ -285,7 +270,6 @@ class WC_Memberships_Integration_Subscriptions {
 		foreach ( $user_memberships as $user_membership ) {
 			$this->update_related_membership_status( $subscription, $user_membership, $new_status );
 		}
-
 	}
 
 
@@ -304,7 +288,7 @@ class WC_Memberships_Integration_Subscriptions {
 
 			case 'active':
 
-				$trial_end = $this->is_subscriptions_gte_2_0()
+				$trial_end = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0()
 									 ? $subscription->get_time( 'trial_end' )
 									 : ( $subscription['trial_expiry_date'] ? strtotime( $subscription['trial_expiry_date'] ) : '' );
 
@@ -433,6 +417,9 @@ class WC_Memberships_Integration_Subscriptions {
 			case 'delete_post':
 				$note = __( 'Membership cancelled because subscription was deleted.', WC_Memberships::TEXT_DOMAIN );
 				break;
+
+			default:
+				$note = null;
 		}
 
 		foreach ( $user_memberships as $user_membership ) {
@@ -475,7 +462,7 @@ class WC_Memberships_Integration_Subscriptions {
 	 * Handle user membership status changes
 	 *
 	 * @since 1.0.0
-	 * @param WC_User_Membership $user_membership
+	 * @param \WC_Memberships_User_Membership $user_membership
 	 * @param string $old_status
 	 * @param string $new_status
 	 */
@@ -540,7 +527,7 @@ class WC_Memberships_Integration_Subscriptions {
 			// can be manually-assigned to memberships and not have an associated subscription
 
 			// 2.0 onwards
-			if ( $this->is_subscriptions_gte_2_0() ) {
+			if ( SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
 
 				if ( wcs_order_contains_subscription( $user_membership->get_order() ) ) {
 					$url = wcs_get_users_resubscribe_link( $this->get_user_membership_subscription_id( $user_membership->get_id() ) );
@@ -573,6 +560,10 @@ class WC_Memberships_Integration_Subscriptions {
 	public function renew_membership( $renew, $plan, $args ) {
 
 		$product = wc_get_product( $args['product_id'] );
+
+		if ( ! $product ) {
+			return $renew;
+		}
 
 		// Disable renewing via a re-purchase of a subscription product
 		if ( $product->is_type( array( 'subscription', 'subscription_variation', 'variable-subscription' ) ) ) {
@@ -608,7 +599,12 @@ class WC_Memberships_Integration_Subscriptions {
 			$access_granting_subscription_product_ids = array();
 
 			foreach ( $access_granting_product_ids as $_product_id ) {
+
 				$product = wc_get_product( $_product_id );
+
+				if ( ! $product ) {
+					continue;
+				}
 
 				if ( $product->is_type( array( 'subscription', 'subscription_variation', 'variable-subscription' ) ) ) {
 					$access_granting_subscription_product_ids[] = $product->id;
@@ -666,6 +662,10 @@ class WC_Memberships_Integration_Subscriptions {
 
 		$product = wc_get_product( $args['product_id'] );
 
+		if ( ! $product ) {
+			return $grant_access;
+		}
+
 		// Handle access from subscriptions
 		if ( $product->is_type( array( 'subscription', 'subscription_variation', 'variable-subscription' ) ) ) {
 
@@ -695,11 +695,15 @@ class WC_Memberships_Integration_Subscriptions {
 
 		$product = wc_get_product( $args['product_id'] );
 
+		if ( ! $product ) {
+			return $data;
+		}
+
 		// Handle access from subscriptions
 		if ( $product->is_type( array( 'subscription', 'subscription_variation', 'variable-subscription' ) ) ) {
 
 			$subscription = $this->get_order_product_subscription( $args['order_id'], $product->id );
-			$trial_end    = $this->is_subscriptions_gte_2_0()
+			$trial_end    = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0()
 										? $subscription->get_time( 'trial_end' )
 										: ( $subscription['trial_expiry_date'] ? strtotime( $subscription['trial_expiry_date'] ) : '' );
 
@@ -725,6 +729,10 @@ class WC_Memberships_Integration_Subscriptions {
 
 		$product = wc_get_product( $args['product_id'] );
 
+		if ( ! $product ) {
+			return;
+		}
+
 		// Handle access from subscriptions
 		if ( $this->has_membership_plan_subscription( $plan->get_id() ) && $product->is_type( array( 'subscription', 'subscription_variation', 'variable-subscription' ) ) ) {
 
@@ -736,7 +744,7 @@ class WC_Memberships_Integration_Subscriptions {
 				return;
 			}
 
-			if ( $this->is_subscriptions_gte_2_0() ) {
+			if ( SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
 
 				// Save related subscription ID
 				update_post_meta( $args['user_membership_id'], '_subscription_id', $subscription->id );
@@ -751,7 +759,7 @@ class WC_Memberships_Integration_Subscriptions {
 			// Set membership expiry date based on subscription expiry date
 			if ( $this->plan_grants_access_while_subscription_active( $plan->get_id() ) ) {
 
-				$end_date = $this->is_subscriptions_gte_2_0()
+				$end_date = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0()
 									? ( $subscription->get_date( 'end' ) ? $subscription->get_date( 'end' ) : '' )
 									: ( $subscription['expiry_date'] ? $subscription['expiry_date'] : '' );
 
@@ -791,12 +799,12 @@ class WC_Memberships_Integration_Subscriptions {
 	 *
 	 * @since 1.0.0
 	 * @param int $user_membership_id User Membership ID
-	 * @return array|null Subscription or null, if not found
+	 * @return \WC_Subscription|array|null Subscription or null, if not found
 	 */
 	public function get_user_membership_subscription( $user_membership_id ) {
 
 		// 2.0 onwards
-		if ( $this->is_subscriptions_gte_2_0() ) {
+		if ( SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
 			$subscription_id = $this->get_user_membership_subscription_id( $user_membership_id );
 
 			if ( ! $subscription_id ) {
@@ -842,7 +850,7 @@ class WC_Memberships_Integration_Subscriptions {
 	 */
 	public function has_user_membership_subscription( $user_membership_id ) {
 
-		if ( $this->is_subscriptions_gte_2_0() ) {
+		if ( SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
 			return (bool) $this->get_user_membership_subscription_id( $user_membership_id );
 		} else {
 			return (bool) $this->get_user_membership_subscription_key( $user_membership_id );
@@ -868,7 +876,7 @@ class WC_Memberships_Integration_Subscriptions {
 				return null;
 			}
 
-			if ( $this->is_subscriptions_gte_2_0() ) {
+			if ( SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
 
 				$subscription = $this->get_user_membership_subscription( $user_membership_id );
 				$this->_subscription_trial_end_date[ $user_membership_id ] = 'mysql' == $format
@@ -934,7 +942,7 @@ class WC_Memberships_Integration_Subscriptions {
 	 *
 	 * @since 1.0.0
 	 * @param int $plan_id Membership Plan ID
-	 * @return bool True, if access is allowed, flase otherwise
+	 * @return bool True, if access is allowed, false otherwise
 	 */
 	public function plan_grants_access_while_subscription_active( $plan_id ) {
 
@@ -1038,29 +1046,32 @@ class WC_Memberships_Integration_Subscriptions {
 			return;
 		}
 
-		if ( ! $this->is_subscriptions_gte_2_0() ) {
+		if ( ! SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
 			$subscription_key = $this->get_user_membership_subscription_key( $user_membership->get_id() );
 		}
 
 		if ( in_array( $user_membership->get_status(), array( 'free_trial', 'active' ) ) ) {
 
-			$next_payment = $this->is_subscriptions_gte_2_0()
+			$next_payment = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0()
 										? $subscription->get_time( 'next_payment' )
 										: WC_Subscriptions_Manager::get_next_payment_date( $subscription_key, $user_membership->get_user_id(), 'timestamp' );
 		} else {
 			$next_payment = null;
 		}
 
-		$subscription_link = $this->is_subscriptions_gte_2_0()
+		$subscription_link = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0()
 											 ? get_edit_post_link( $subscription->id )
 											 : esc_url( admin_url( 'admin.php?page=subscriptions&s=' . $subscription['order_id'] ) );
 
-		$subscription_link_text = $this->is_subscriptions_gte_2_0() ? $subscription->id : $subscription_key;
+		$subscription_link_text = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ? $subscription->id : $subscription_key;
 
-		// TODO: subs 1.5.x doesn't account for the site timezone
-		$subscription_expires = $this->is_subscriptions_gte_2_0()
-									? $subscription->get_date_to_display( 'end' )
-									: $subscription['expiry_date'] ? date_i18n( wc_date_format(), strtotime( $subscription['expiry_date'] ) ) : __( 'Subscription not yet ended', WC_Memberships::TEXT_DOMAIN );
+		if ( SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
+			$subscription_expires = $subscription->get_date_to_display( 'end' );
+		} else {
+			// note: subs 1.5.x doesn't account for the site timezone
+			$subscription_expires = $subscription['expiry_date'] ? date_i18n( wc_date_format(), strtotime( $subscription['expiry_date'] ) ) : __( 'Subscription not yet ended', WC_Memberships::TEXT_DOMAIN );
+		}
+
 		?>
 			<table>
 				<tr>
@@ -1102,12 +1113,12 @@ class WC_Memberships_Integration_Subscriptions {
 
 		$subscription = $this->get_user_membership_subscription( $user_membership->get_id() );
 
-		if ( ! $this->is_subscriptions_gte_2_0() ) {
+		if ( ! SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
 			$subscription_key = $this->get_user_membership_subscription_key( $user_membership->get_id() );
 		}
 
 		if ( $subscription && in_array( $user_membership->get_status(), array( 'active', 'free_trial' ) ) ) {
-			$next_payment = $this->is_subscriptions_gte_2_0()
+			$next_payment = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0()
 										? $subscription->get_time( 'next_payment' )
 										: WC_Subscriptions_Manager::get_next_payment_date( $subscription_key, $user_membership->get_user_id(), 'timestamp' );
 		}
@@ -1129,13 +1140,30 @@ class WC_Memberships_Integration_Subscriptions {
 	 *
 	 * @since 1.3.0
 	 * @param array $actions
-	 * @param WC_User_Membership $membership
+	 * @param \WC_Memberships_User_Membership $membership
 	 * @return array
 	 */
 	public function my_membership_actions( $actions, WC_Memberships_User_Membership $membership ) {
 
 		if ( $this->membership_has_subscription( $membership ) ) {
+
+			// memberships tied to a subscription can only be canceled by canceling the associated subscription
 			unset( $actions['cancel'] );
+
+			$subscription = $this->get_user_membership_subscription( $membership->get_id() );
+
+			if ( SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
+
+				$renewable = wcs_can_user_resubscribe_to( $subscription, $membership->get_user_id() );
+
+			} else {
+
+				$renewable = WC_Subscriptions_Renewal_Order::can_subscription_be_renewed( $this->get_user_membership_subscription_key( $membership->get_id() ), $membership->get_user_id() );
+			}
+
+			if ( ! $renewable ) {
+				unset( $actions['renew'] );
+			}
 		}
 
 		return $actions;
@@ -1219,6 +1247,8 @@ class WC_Memberships_Integration_Subscriptions {
 	 * as well as on any individual product screens.
 	 *
 	 * @since 1.0.0
+	 * @param \WC_Memberships_Membership_Plan_Rule $rule
+	 * @param string $index
 	 */
 	public function output_exclude_trial_option( $rule, $index ) {
 
@@ -1293,7 +1323,7 @@ class WC_Memberships_Integration_Subscriptions {
 			'post_type'    => 'wc_user_membership',
 			'nopaging'     => true,
 			'post_status'  => 'any',
-			'meta_key'     => $this->is_subscriptions_gte_2_0() ? '_subscription_id' : '_subscription_key',
+			'meta_key'     => SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ? '_subscription_id' : '_subscription_key',
 			'meta_value'   => '0',
 			'meta_compare' => '>',
 		);
@@ -1315,7 +1345,7 @@ class WC_Memberships_Integration_Subscriptions {
 				continue;
 			}
 
-			$subscription_status = $this->is_subscriptions_gte_2_0()
+			$subscription_status = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0()
 													 ? $subscription->get_status()
 													 : $subscription['status'];
 
@@ -1326,7 +1356,7 @@ class WC_Memberships_Integration_Subscriptions {
 				if ( 'paused' == $user_membership->get_status() ) {
 
 					// Get trial end date
-					$trial_end = $this->is_subscriptions_gte_2_0()
+					$trial_end = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0()
 										 ? $subscription->get_time( 'trial_end' )
 										 : ( $subscription['trial_expiry_date'] ? strtotime( $subscription['trial_expiry_date'] ) : '' );
 
@@ -1347,7 +1377,7 @@ class WC_Memberships_Integration_Subscriptions {
 			}
 
 			// Get the subscription end date
-			$end_date = $this->is_subscriptions_gte_2_0()
+			$end_date = SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0()
 								? ( $subscription->get_date( 'end' ) ? $subscription->get_date( 'end' ) : '' )
 								: ( $subscription['expiry_date'] ? $subscription['expiry_date'] : '' );
 
@@ -1392,9 +1422,8 @@ class WC_Memberships_Integration_Subscriptions {
 	 * Handle subscriptions activation
 	 *
 	 * @since 1.0.0
-	 * @param string $plugin Plugin
 	 */
-	public function handle_activation( $plugin ) {
+	public function handle_activation() {
 		$this->update_subscription_memberships();
 	}
 
@@ -1432,7 +1461,7 @@ class WC_Memberships_Integration_Subscriptions {
 		}
 
 		// Upgrade routine from Subscriptions pre-2.0 to 2.0
-		if ( version_compare( WC_Subscriptions::$version, '2.0', '>=' ) && version_compare( $subscriptions_version, '2.0', '<' ) ) {
+		if ( version_compare( WC_Subscriptions::$version, '2.0.0-RC1', '>=' ) && version_compare( $subscriptions_version, '2.0.0', '<' ) ) {
 
 			global $wpdb;
 
@@ -1453,12 +1482,11 @@ class WC_Memberships_Integration_Subscriptions {
 			foreach ( $results as $result ) {
 				$subscription_id = wcs_get_subscription_id_from_key( $result->subscription_key );
 
-				if ( $subscription_key ) {
+				if ( $subscription_id ) {
 					update_post_meta( $result->ID, '_subscription_id', $subscription_id );
 					delete_post_meta( $result->ID, '_subscription_key' );
 				}
 			}
-
 		}
 
 		// Update our record of Subscriptions version
@@ -1470,14 +1498,14 @@ class WC_Memberships_Integration_Subscriptions {
 	 * Check whether a membership is subscription-based or not
 	 *
 	 * @since 1.0.1
-	 * @param int|WC_User_Membership $user_membership
+	 * @param int|WC_Memberships_User_Membership $user_membership
 	 * @return bool True, if memberships is subscription-based, false otherwise
 	 */
 	public function membership_has_subscription( $user_membership ) {
 
 		$id = is_object( $user_membership ) ? $user_membership->get_id() : $user_membership;
 
-		if ( $this->is_subscriptions_gte_2_0() ) {
+		if ( SV_WC_Plugin_Compatibility::is_wc_subscriptions_version_gte_2_0() ) {
 			$subscription = get_post_meta( $id, '_subscription_id', true );
 		}
 		else {

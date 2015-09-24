@@ -876,6 +876,7 @@ class WC_Memberships_Restrictions {
 							jQuery('.wc-memberships-variation-message').hide();
 						})
 						.on( 'found_variation', function( event, variation ) {
+							jQuery('.wc-memberships-variation-message').hide();
 							if ( ! variation.is_purchasable ) {
 								jQuery( '.wc-memberships-variation-message.js-variation-' + variation.variation_id ).show();
 							}
@@ -888,7 +889,7 @@ class WC_Memberships_Restrictions {
 
 
 	/**
-	 * Display member discount message for product
+	 * Display member discount message for a product or variation.
 	 *
 	 * @since 1.0.0
 	 */
@@ -896,12 +897,44 @@ class WC_Memberships_Restrictions {
 
 		global $product;
 
+		// If the main/parent product needs the message, just display it normally
 		if ( wc_memberships_product_has_member_discount() && ! wc_memberships_user_has_member_discount() ) {
 
-			$message = wc_memberships()->frontend->get_member_discount_message( $product->id );
-
-			if ( $message ) {
+			if ( $message = wc_memberships()->frontend->get_member_discount_message( $product->id ) ) {
 				echo '<div class="woocommerce"><div class="woocommerce-info wc-memberships-member-discount-message">' . wp_kses_post( $message ) . '</div></div>';
+			}
+
+		// If this is a variable product, set the messages up for display per-variation
+		} else if ( $product->is_type( 'variable' ) && $product->has_child() ) {
+
+			$variations_discounted = false;
+
+			foreach ( $product->get_available_variations() as $variation ) {
+
+				$variation_id = $variation['variation_id'];
+
+				if ( wc_memberships_product_has_member_discount( $variation_id ) && ! wc_memberships_user_has_member_discount( $variation_id ) ) {
+
+					$variations_discounted = true;
+
+					if ( $message = wc_memberships()->frontend->get_member_discount_message( $variation_id ) ) {
+						echo '<div class="woocommerce"><div class="woocommerce-info wc-memberships-member-discount-message wc-memberships-variation-message js-variation-' . sanitize_html_class( $variation_id ) . '">' . wp_kses_post( $message ) . '</div></div>';
+					}
+				}
+			}
+
+			if ( $variations_discounted ) {
+				wc_enqueue_js("
+					jQuery( '.variations_form' )
+						.on( 'woocommerce_variation_select_change', function( event ) {
+							jQuery( '.wc-memberships-variation-message.wc-memberships-member-discount-message' ).hide();
+						})
+						.on( 'found_variation', function( event, variation ) {
+							jQuery( '.wc-memberships-variation-message.wc-memberships-member-discount-message' ).hide();
+							jQuery( '.wc-memberships-variation-message.wc-memberships-member-discount-message.js-variation-' + variation.variation_id ).show();
+						})
+						.find( '.variations select' ).change();
+				");
 			}
 		}
 	}

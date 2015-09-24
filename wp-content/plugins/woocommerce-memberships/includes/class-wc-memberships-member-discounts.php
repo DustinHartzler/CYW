@@ -126,28 +126,56 @@ class WC_Memberships_Member_Discounts {
 		 */
 		$display_sale_price = apply_filters( 'wc_memberships_member_prices_display_sale_price', false );
 
-		add_filter( 'woocommerce_get_variation_prices_hash', array( $this, 'nonmember_variation_prices_hash' ), 10, 3 );
+		// For variable products in WC 2.4+, manually calculate the original price
+		if ( SV_WC_Plugin_Compatibility::is_wc_version_gte_2_4() && $product->is_type( 'variable' ) ) {
 
-		if ( ! $display_sale_price ) {
-			add_filter( 'woocommerce_product_is_on_sale', array( $this, 'disable_sale_price' ) );
+			$regular_min = $product->get_variation_regular_price( 'min', true );
+			$regular_max = $product->get_variation_regular_price( 'max', true );
+
+			$_html = $regular_min !== $regular_max ? sprintf( _x( '%1$s&ndash;%2$s', 'Price range: from-to', WC_Memberships::TEXT_DOMAIN ), wc_price( $regular_min ), wc_price( $regular_max ) ) : wc_price( $regular_min );
+
+		} else {
+
+			if ( ! $display_sale_price ) {
+				add_filter( 'woocommerce_product_is_on_sale', array( $this, 'disable_sale_price' ) );
+			}
+
+			$this->disable_price_adjustments();
+			$this->disable_price_html_adjustments();
+
+			$_html = $product->get_price_html();
+
+			$this->enable_price_adjustments();
+			$this->enable_price_html_adjustments();
+
+			if ( ! $display_sale_price ) {
+				remove_filter( 'woocommerce_product_is_on_sale', array( $this, 'disable_sale_price' ) );
+			}
 		}
 
-		$this->disable_price_adjustments();
-		$this->disable_price_html_adjustments();
-
-		$_html = $product->get_price_html();
-
-		$this->enable_price_adjustments();
-		$this->enable_price_html_adjustments();
-
-		remove_filter( 'woocommerce_get_variation_prices_hash', array( $this, 'nonmember_variation_prices_hash' ) );
-
-		if ( ! $display_sale_price ) {
-			remove_filter( 'woocommerce_product_is_on_sale', array( $this, 'disable_sale_price' ) );
-		}
-
-		if ( $html != $_html ) {
+		if ( $html !== $_html ) {
 			$html = '<del>' . $_html . '</del> <ins> ' . $html . '</ins>';
+		}
+
+		// Add a "Member Discount" badge for single variation prices
+		if ( $product->is_type( 'variation' ) ) {
+
+			$badge = sprintf(
+				__( '%1$sMember discount!%2$s', WC_Memberships::TEXT_DOMAIN ),
+				' <span class="wc-memberships-variation-member-discount">',
+				'</span>'
+			);
+
+			/**
+			 * Filter the variation member discount badge.
+			 *
+			 * @since 1.3.2
+			 * @param string $badge The badge HTML.
+			 * @param object $variation The product variation.
+			 */
+			$badge = apply_filters( 'wc_memberships_variation_member_discount_badge', $badge, $product );
+
+			$html .= " {$badge}";
 		}
 
 		return $html;
@@ -272,15 +300,20 @@ class WC_Memberships_Member_Discounts {
 
 
 	/**
-	 * Create variable product nonmember prices hash
+	 * Add the current user ID to the variation prices hash for caching.
 	 *
-	 * @since 1.3.0
-	 * @param WC_Product $product
-	 * @return string
+	 * @since 1.3.2
+	 * @param array $data The existing hash data.
+	 * @param object $product The current product variation.
+	 * @param bool $display Whether the prices are for display.
+	 * @return array $data The hash data with a user ID added if applicable.
 	 */
-	public function nonmember_variation_prices_hash( $data, $product, $display ) {
+	public function set_user_variation_prices_hash( $data, $product, $display ) {
 
-		$data[] = 'wc-membership-nonmember';
+		if ( is_user_logged_in() ) {
+			$data[] = get_current_user_id();
+		}
+
 		return $data;
 	}
 
@@ -401,7 +434,9 @@ class WC_Memberships_Member_Discounts {
 	 * @since 1.3.0
 	 */
 	private function enable_price_adjustments() {
-		add_filter( 'woocommerce_get_price', array( $this, 'on_get_price' ), 10, 2 );
+		add_filter( 'woocommerce_get_price',                 array( $this, 'on_get_price' ), 10, 2 );
+		add_filter( 'woocommerce_variation_prices_price',    array( $this, 'on_get_price' ), 10, 2 );
+		add_filter( 'woocommerce_get_variation_prices_hash', array( $this, 'set_user_variation_prices_hash' ), 10, 3 );
 	}
 
 
@@ -411,7 +446,9 @@ class WC_Memberships_Member_Discounts {
 	 * @since 1.3.0
 	 */
 	private function disable_price_adjustments() {
-		remove_filter( 'woocommerce_get_price', array( $this, 'on_get_price' ) );
+		remove_filter( 'woocommerce_get_price',                 array( $this, 'on_get_price' ) );
+		remove_filter( 'woocommerce_variation_prices_price',    array( $this, 'on_get_price' ) );
+		remove_filter( 'woocommerce_get_variation_prices_hash', array( $this, 'set_user_variation_prices_hash' ) );
 	}
 
 
@@ -432,7 +469,6 @@ class WC_Memberships_Member_Discounts {
 	 * @since 1.3.0
 	 */
 	private function disable_price_html_adjustments() {
-
 		remove_filter( 'woocommerce_get_price_html',       array( $this, 'on_price_html' ) );
 		remove_filter( 'woocommerce_variation_price_html', array( $this, 'on_price_html' ) );
 	}

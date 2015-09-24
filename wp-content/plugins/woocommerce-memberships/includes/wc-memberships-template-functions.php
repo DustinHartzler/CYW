@@ -54,11 +54,12 @@ if ( ! function_exists( 'wc_memberships_restrict' ) ) {
 	 *
 	 * @since 1.0.0
 	 * @param string $content
-	 * @param array $plans
+	 * @param string|int|array $plans Optional. The membership plan or plans to check against.
+	 *                                Accepts a plan slug, ID, or an array of slugs or IDs. Default: all plans.
 	 * @param string $delay
 	 * @param bool $exclude_trial
 	 */
-	function wc_memberships_restrict( $content, $plans, $delay = null, $exclude_trial = false ) {
+	function wc_memberships_restrict( $content, $plans = null, $delay = null, $exclude_trial = false ) {
 
 		$has_access   = false;
 		$member_since = null;
@@ -68,6 +69,9 @@ if ( ! function_exists( 'wc_memberships_restrict' ) ) {
 		if ( current_user_can( 'wc_memberships_access_all_restricted_content' ) ) {
 			$has_access = true;
 		}
+
+		// Convert to an array in all cases
+		$plans = (array) $plans;
 
 		// default to use all plans if no plan is specified
 		if ( empty( $plans ) ) {

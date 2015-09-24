@@ -239,7 +239,7 @@ class WC_Memberships_Frontend {
 
 		if ( ! is_user_logged_in() && is_cart() && in_array( $display_in, array( 'cart', 'both' ) ) ) {
 
-			if ( $this->cart_has_items_with_member_discounts() ) {
+			if ( $this->cart_has_items_with_member_discounts() && ! is_ajax() ) {
 
 				$message = $this->get_member_login_message();
 				wc_add_notice( sprintf( $message, '<a href="' . esc_url( SV_WC_Plugin_Compatibility::wc_get_page_permalink( 'myaccount' ) ) . '">', '</a>' ), 'notice' );
@@ -377,7 +377,12 @@ class WC_Memberships_Frontend {
 			if ( $plan && $plan->has_products() ) {
 
 				foreach ( $plan->get_product_ids() as $product_id ) {
-					$products[] = $product_id;
+
+					$product = wc_get_product( $product_id );
+
+					if ( $product->is_purchasable() && $product->is_visible() ) {
+						$products[] = $product_id;
+					}
 				}
 			}
 
