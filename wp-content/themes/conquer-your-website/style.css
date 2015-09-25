@@ -53,15 +53,6 @@ a img {
 article, aside, details, figcaption, figure, footer, header, hgroup, main, menu, nav, section, summary {
   display: block; }
 
-/*
-Theme Name: Conquer Your Website
-Theme URI: http://ConquerYourWebsite.com
-Description: Converted from HTML theme to WordPress for Conquer Your Website.
-Author: Dustin Hartzler
-Author URI: http://YourWebsiteEngineer.com
-Version: 1.0
-*/
-/* CSS Document */
 body {
   line-height: normal; }
 
@@ -2932,3 +2923,8 @@ h2.bigtitle {
 .addcart-right img {
   width: 470px;
   height: auto; }
+
+.widget-latest-news {
+  float: left;
+  width: 100%;
+  margin-top: 25px; }

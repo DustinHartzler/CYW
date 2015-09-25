@@ -9,4 +9,10 @@ Version: 2.0
 
 @import "compass/reset";
 @import "compass/css3";
-@import "main"
+@import "main";
+
+.widget-latest-news {
+    float: left;
+    width: 100%;
+    margin-top: 25px;
+}
