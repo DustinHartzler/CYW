@@ -46,7 +46,7 @@ switch( $template ) {
 	default :
 	?>
 		</div>
-		<?php get_sidebar(); ?>
+		
 	</div>
 	<?php
 		break;
