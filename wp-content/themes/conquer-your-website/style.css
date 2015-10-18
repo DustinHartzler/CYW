@@ -1130,7 +1130,8 @@ blockquote {
   float: left;
   width: 100%; }
 
-.widget-latest-news h3 {
+.widget-latest-news h3,
+.sidebar h2 a {
   bottom: 12px;
   color: #FFFFFF;
   font-size: 20px;
@@ -2166,16 +2167,16 @@ h2.hr-line1 {
   position: relative; }
 
 .next {
-  background: url(images/nextt.png) no-repeat scroll 52px 14px #92877D;
-  border: 1px solid #FFFFFF;
-  border-radius: 15px 15px 15px 15px;
-  box-shadow: 1px 1px 1px 1px #5A5149 inset;
-  color: #FFFFFF !important;
-  float: right;
-  padding: 6px 40px 6px 17px;
-  text-shadow: 1px 1px 1px #473E36;
-  behavior: url(PIE.htc);
-  position: relative; }
+  /*	background: url(images/nextt.png) no-repeat scroll 52px 14px #92877D;
+  	border: 1px solid #FFFFFF;
+  	border-radius: 15px 15px 15px 15px;
+  	box-shadow: 1px 1px 1px 1px #5A5149 inset;
+  	color: #FFFFFF !important;
+  	float: right;
+  	padding: 6px 40px 6px 17px;
+  	text-shadow: 1px 1px 1px #473E36;
+  	behavior:url(PIE.htc);
+  	position: relative;*/ }
 
 .previous:hover {
   background: url(images/previous.png) no-repeat scroll 15px 14px #ac926e;
@@ -2928,3 +2929,41 @@ h2.bigtitle {
   float: left;
   width: 100%;
   margin-top: 25px; }
+
+/*Sensei Customizations*/
+#post-entries {
+  clear: both;
+  border-top: 2px solid #a69179;
+  padding: 1.618em 0 0;
+  margin: 0 0 2.618em; }
+
+.nav-prev,
+.nav-next {
+  font-size: 16px; }
+
+#post-entries .nav-prev a:before {
+  font-family: "FontAwesome";
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: inherit;
+  speak: none;
+  width: 1.5em;
+  display: inline-block;
+  line-height: 1;
+  content: "\f060"; }
+
+#post-entries .nav-next a:after {
+  font-family: "FontAwesome";
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: inherit;
+  speak: none;
+  width: 1.5em;
+  display: inline-block;
+  text-align: right;
+  line-height: 1;
+  content: "\f061"; }
+
+.nav-prev .meta-nav:before,
+.nav-next .meta-nav:before {
+  content: none; }

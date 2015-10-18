@@ -16,3 +16,46 @@ Version: 2.0
     width: 100%;
     margin-top: 25px;
 }	
+
+/*Sensei Customizations*/
+#post-entries {
+	clear: both;
+    border-top: 2px solid #a69179;
+    padding: 1.618em 0 0;
+    margin: 0 0 2.618em;
+}
+
+.nav-prev,
+.nav-next {
+	font-size: 16px;
+}
+
+#post-entries .nav-prev a:before {
+    font-family: "FontAwesome";
+    font-weight: normal;
+    font-style: normal;
+    text-decoration: inherit;
+    speak: none;
+    width: 1.5em;
+    display: inline-block;
+    line-height: 1;
+    content: "\f060";
+}
+
+#post-entries .nav-next a:after {
+    font-family: "FontAwesome";
+    font-weight: normal;
+    font-style: normal;
+    text-decoration: inherit;
+    speak: none;
+    width: 1.5em;
+    display: inline-block;
+    text-align: right;
+    line-height: 1;
+    content: "\f061";
+}
+
+.nav-prev .meta-nav:before,
+.nav-next .meta-nav:before  {
+   	content: none;
+}

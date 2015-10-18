@@ -1091,7 +1091,8 @@ blockquote {
 	float:left;
 	width:100%;
 }
-.widget-latest-news h3 {
+.widget-latest-news h3,
+.sidebar h2 a {
 	bottom: 12px;
 	color: #FFFFFF;
 	font-size: 20px;
@@ -2144,7 +2145,7 @@ h2.hr-line1 {
 	position: relative;
 }
 .next {
-	background: url(images/nextt.png) no-repeat scroll 52px 14px #92877D;
+/*	background: url(images/nextt.png) no-repeat scroll 52px 14px #92877D;
 	border: 1px solid #FFFFFF;
 	border-radius: 15px 15px 15px 15px;
 	box-shadow: 1px 1px 1px 1px #5A5149 inset;
@@ -2153,7 +2154,7 @@ h2.hr-line1 {
 	padding: 6px 40px 6px 17px;
 	text-shadow: 1px 1px 1px #473E36;
 	behavior:url(PIE.htc);
-	position: relative;
+	position: relative;*/
 }
 .previous:hover {
 	background: url(images/previous.png) no-repeat scroll 15px 14px #ac926e;
