@@ -134,11 +134,30 @@ msgid "WordPress.org is home to some amazing extensions for WooCommerce, includi
 msgstr ""
 
 #. Found in description paragraph.
+msgid ""
+"<a href=\"https://wordpress.org/plugins/woocommerce-google-analytics-integration/\">Google Analytics</a>\n"
+"<a href=\"https://wordpress.org/plugins/woocommerce-delivery-notes/\">Delivery Notes</a>\n"
+"<a href=\"https://wordpress.org/plugins/woocommerce-pdf-invoices-packing-slips/\">PDF Invoices and Packing Slips</a>\n"
+"<a href=\"https://wordpress.org/plugins/affiliates-woocommerce-light/\">Affiliates Integration Light</a>\n"
+"<a href=\"https://wordpress.org/plugins/woocommerce-new-product-badge/\">New Product Badges</a>"
+msgstr ""
+
+#. Found in description paragraph.
 msgid "Keen to see them all? Search WordPress.org for ‘WooCommerce’ to dive in."
 msgstr ""
 
 #. Found in description paragraph.
 msgid "If you’re looking for something endorsed and maintained by the developers who built WooCommerce, there are a plethora of premium eCommerce extensions, the most popular of which include:"
+msgstr ""
+
+#. Found in description paragraph.
+msgid ""
+"<a href=\"http://www.woothemes.com/products/woocommerce-subscriptions/\">WooCommerce Subscriptions</a>\n"
+"<a href=\"http://www.woothemes.com/products/woocommerce-memberships/\">WooCommerce Memberships</a>\n"
+"<a href=\"http://www.woothemes.com/products/woocommerce-bookings/\">WooCommerce Bookings</a>\n"
+"<a href=\"http://www.woothemes.com/products/dynamic-pricing/\">Dynamic Pricing</a>\n"
+"<a href=\"http://www.woothemes.com/products/table-rate-shipping/\">Table Rate Shipping</a>\n"
+"<a href=\"http://www.woothemes.com/products/product-csv-import-suite/\">Product CSV Import Suite</a>"
 msgstr ""
 
 #. Found in description paragraph.
@@ -154,7 +173,7 @@ msgid "If you’re interested in contributing to WooCommerce we’ve got more th
 msgstr ""
 
 #. Found in description paragraph.
-msgid "Want to add a new language to WooCommerce? Swell! You can contribute through <a href=\"https://www.transifex.com/woothemes/woocommerce/\">Transifex</a>."
+msgid "Want to add a new language to WooCommerce? Swell! You can contribute via <a href=\"http://translate.wordpress.org/projects/wp-plugins/woocommerce\">translate.wordpress.org</a>."
 msgstr ""
 
 #. Found in description paragraph.
@@ -219,6 +238,82 @@ msgstr ""
 
 #. Found in installation paragraph.
 msgid "WooCommerce comes with some dummy data you can use to see how products look; either import dummy_data.xml via the <a href=\"http://wordpress.org/extend/plugins/wordpress-importer/\">WordPress importer</a> or use our <a href=\"http://www.woothemes.com/products/product-csv-import-suite/\">CSV Import Suite plugin</a> to import dummy_data.csv and dummy_data_variations.csv."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Help tips in variations admin."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - API - Fixed customer count method."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Locale switching for city field."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Notice in wc_nav_menu_items when endpoint is not set."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Loading of correct variation prices when display is true and false in the same page load."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Shipping priority for methods with colons in the name."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Saving of passwords with '&amp;' inside."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Remove double escaping of coupon descriptions."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Settings API default value should not apply if value of option is 0 ."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Avoid potential PHP Fatals by avoiding premature script enqueues."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Pass mimes when checking file type ."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - Reset shipping totals before calculation to prevent totals being used incorrectly."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - API - Corrected how attributes terms saves non-latin characters."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - API - Variations price sync."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Fix - API - Fixed lost variable products data when create/edit an order."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Tweak - Add trailing slash in get_page_uris to reduce likelihood of conflicts."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Tweak - API - Added refunded_item_id on GET orders//refunds endpoint."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Tweak - API - Allow variable products to get retrieved by SKU."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Tweak - API - Allow edit variations without define the product type to variable."
 msgstr ""
 
 #. Found in changelog list item.
