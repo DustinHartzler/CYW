@@ -88,7 +88,7 @@ jQuery( function ( $ ) {
 		'fadeOut': 50,
 		'delay': 200
 	};
-	$( '.tips, .help_tip' ).tipTip( tiptip_args );
+	$( '.tips, .help_tip, .woocommerce-help-tip' ).tipTip( tiptip_args );
 
 	// Add tiptip to parent element for widefat tables
 	$( '.parent-tips' ).each( function() {
@@ -125,15 +125,16 @@ jQuery( function ( $ ) {
 	});
 
 	var controlled = false;
-	var shifted = false;
-	var hasFocus = false;
+	var shifted    = false;
+	var hasFocus   = false;
 
 	$( document.body ).bind( 'keyup keydown', function( e ) {
-		shifted = e.shiftKey; controlled = e.ctrlKey || e.metaKey;
+		shifted    = e.shiftKey;
+		controlled = e.ctrlKey || e.metaKey;
 	});
 
 	$( '.wc_input_table' ).on( 'focus click', 'input', function( e ) {
-		var $this_table = $( this ).closest( 'table' );
+		var $this_table = $( this ).closest( 'table, tbody' );
 		var $this_row   = $( this ).closest( 'tr' );
 
 		if ( ( e.type === 'focus' && hasFocus !== $this_row.index() ) || ( e.type === 'click' && $( this ).is( ':focus' ) ) ) {
@@ -147,7 +148,7 @@ jQuery( function ( $ ) {
 				$this_row.addClass( 'selected_now' ).addClass( 'current' );
 
 				if ( $( 'tr.last_selected', $this_table ).size() > 0 ) {
-					if ( $this_row.index() > $( 'tr.last_selected, $this_table' ).index() ) {
+					if ( $this_row.index() > $( 'tr.last_selected', $this_table ).index() ) {
 						$( 'tr', $this_table ).slice( $( 'tr.last_selected', $this_table ).index(), $this_row.index() ).addClass( 'current' );
 					} else {
 						$( 'tr', $this_table ).slice( $this_row.index(), $( 'tr.last_selected', $this_table ).index() + 1 ).addClass( 'current' );
