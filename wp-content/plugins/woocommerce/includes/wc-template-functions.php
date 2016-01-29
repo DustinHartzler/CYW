@@ -524,7 +524,7 @@ if (  ! function_exists( 'woocommerce_template_loop_product_title' ) ) {
 		echo '<h3>' . get_the_title() . '</h3>';
 	}
 }
-if (  ! function_exists( 'woocommerce_template_loop_subcategory_title' ) ) {
+if (  ! function_exists( 'woocommerce_template_loop_category_title' ) ) {
 
 	/**
 	 * Show the subcategory title in the product loop.
@@ -2021,7 +2021,7 @@ if ( ! function_exists( 'wc_dropdown_variation_attribute_options' ) ) {
 
 		$html .= '</select>';
 
-		echo apply_filters( 'woocommerce_dropdown_variation_attribute_options_html', $html );
+		echo apply_filters( 'woocommerce_dropdown_variation_attribute_options_html', $html, $args );
 	}
 
 }

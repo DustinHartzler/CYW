@@ -2,43 +2,43 @@
 jQuery( function( $ ) {
 
 	/**
-	 * Password Strength Meter class
+	 * Password Strength Meter class.
 	 */
 	var wc_password_strength_meter = {
 
 		/**
-		 * Initialize strength meter actions
+		 * Initialize strength meter actions.
 		 */
 		init: function() {
 			$( document.body )
-				.on( 'keyup', 'form.register #reg_password, form.checkout #account_password', this.strengthMeter )
-				.on( 'change', 'form.checkout #createaccount', this.checkoutNeedsRegistration );
+				.on( 'keyup', 'form.register #reg_password, form.checkout #account_password, form.edit-account #password_1, form.lost_reset_password #password_1', this.strengthMeter );
 
 			$( 'form.checkout #createaccount' ).change();
 		},
 
 		/**
-		 * Strength Meter
+		 * Strength Meter.
 		 */
 		strengthMeter: function() {
-			var wrapper  = $( 'form.register, form.checkout' ),
+			var wrapper  = $( 'form.register, form.checkout, form.edit-account, form.lost_reset_password' ),
 				submit   = $( 'input[type="submit"]', wrapper ),
-				field    = $( '#reg_password, #account_password', wrapper ),
+				field    = $( '#reg_password, #account_password, #password_1', wrapper ),
 				strength = 1;
 
 			wc_password_strength_meter.includeMeter( wrapper, field );
 
 			strength = wc_password_strength_meter.checkPasswordStrength( field );
 
+			// Stop form if password is weak... But not in checkout form!
 			if ( 3 === strength || 4 === strength ) {
 				submit.removeAttr( 'disabled' );
-			} else {
+			} else if ( ! wrapper.hasClass( 'checkout' ) ) {
 				submit.attr( 'disabled', 'disabled' );
 			}
 		},
 
 		/**
-		 * Include meter HTML
+		 * Include meter HTML.
 		 *
 		 * @param {Object} wrapper
 		 * @param {Object} field
@@ -54,9 +54,9 @@ jQuery( function( $ ) {
 		},
 
 		/**
-		 * Check password strength
+		 * Check password strength.
 		 *
-		 * @param  {Object} field
+		 * @param {Object} field
 		 *
 		 * @return {Int}
 		 */
@@ -86,19 +86,6 @@ jQuery( function( $ ) {
 			}
 
 			return strength;
-		},
-
-		/**
-		 * Check if user wants register on checkout.
-		 */
-		checkoutNeedsRegistration: function() {
-			var submit = $( 'form.checkout input[type="submit"]' );
-
-			if ( $( this ).is( ':checked' ) ) {
-				submit.attr( 'disabled', 'disabled' );
-			} else {
-				submit.removeAttr( 'disabled' );
-			}
 		}
 	};
 

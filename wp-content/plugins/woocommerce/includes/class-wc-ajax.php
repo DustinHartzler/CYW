@@ -315,6 +315,7 @@ class WC_AJAX {
 
 			if ( isset( $_POST['country'] ) ) {
 				WC()->customer->set_shipping_country( $_POST['country'] );
+				WC()->customer->calculated_shipping( true );
 			}
 
 			if ( isset( $_POST['state'] ) ) {
@@ -340,6 +341,7 @@ class WC_AJAX {
 
 			if ( isset( $_POST['s_country'] ) ) {
 				WC()->customer->set_shipping_country( $_POST['s_country'] );
+				WC()->customer->calculated_shipping( true );
 			}
 
 			if ( isset( $_POST['s_state'] ) ) {
@@ -392,6 +394,8 @@ class WC_AJAX {
 				'.woocommerce-checkout-payment'            => $woocommerce_checkout_payment
 			) )
 		);
+
+		unset( WC()->session->refresh_totals, WC()->session->reload_checkout );
 
 		wp_send_json( $data );
 
@@ -2531,6 +2535,7 @@ class WC_AJAX {
 				$variation_data['image']          = $variation_data['_thumbnail_id'] ? wp_get_attachment_thumb_url( $variation_data['_thumbnail_id'] ) : '';
 				$variation_data['shipping_class'] = $shipping_classes && ! is_wp_error( $shipping_classes ) ? current( $shipping_classes )->term_id : '';
 				$variation_data['menu_order']     = $variation->menu_order;
+				$variation_data['_stock']         = wc_stock_amount( $variation_data['_stock'] );
 
 				// Stock BW compat
 				if ( '' !== $variation_data['_stock'] ) {
