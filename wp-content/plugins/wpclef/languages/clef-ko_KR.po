@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WPClef\n"
 "Report-Msgid-Bugs-To: support@getclef.com\n"
-"POT-Creation-Date: 2016-03-10 16:37-0800\n"
-"PO-Revision-Date: 2016-03-11 00:37+0000\n"
+"POT-Creation-Date: 2016-05-16 11:22-0700\n"
+"PO-Revision-Date: 2016-05-16 18:22+0000\n"
 "Last-Translator: Jesse Pollak <jesse@getclef.com>\n"
 "Language-Team: Korean (Korea) (http://www.transifex.com/clef/wpclef/language/ko_KR/)\n"
 "MIME-Version: 1.0\n"
@@ -268,11 +268,11 @@ msgstr ""
 msgid "Enter override key here"
 msgstr ""
 
-#: includes/class.clef-utils.php:184
+#: includes/class.clef-utils.php:190
 msgid "Error retrieving Clef access token: "
 msgstr ""
 
-#: includes/class.clef-utils.php:198
+#: includes/class.clef-utils.php:204
 msgid "Error retrieving Clef user data: "
 msgstr ""
 
@@ -411,7 +411,7 @@ msgstr ""
 msgid "Password Settings"
 msgstr ""
 
-#: includes/class.clef-login.php:282 includes/class.clef-login.php:389
+#: includes/class.clef-login.php:282 includes/class.clef-login.php:391
 msgid "Passwords have been disabled for this user."
 msgstr ""
 
@@ -484,7 +484,7 @@ msgstr ""
 msgid "Skip setup, I already have Clef API keys"
 msgstr ""
 
-#: includes/class.clef-utils.php:178 includes/class.clef-utils.php:192
+#: includes/class.clef-utils.php:184 includes/class.clef-utils.php:198
 msgid "Something went wrong: "
 msgstr ""
 
@@ -502,7 +502,7 @@ msgid ""
 " new one."
 msgstr ""
 
-#: includes/class.clef-login.php:382
+#: includes/class.clef-login.php:384
 msgid "Success. <b>Your Clef account has been connected!</b>"
 msgstr ""
 
@@ -534,7 +534,7 @@ msgstr ""
 msgid "Thanks!"
 msgstr ""
 
-#: includes/class.clef-utils.php:146
+#: includes/class.clef-utils.php:152
 msgid ""
 "The Clef account you're trying to connect is already associated to a "
 "different WordPress account"
@@ -575,7 +575,11 @@ msgstr ""
 msgid "There was an error inviting users to Clef: %s"
 msgstr ""
 
-#: includes/class.clef-login.php:328
+#: includes/class.clef-login.php:327
+msgid "There's <b>no WordPress user</b> connected to your Clef account."
+msgstr ""
+
+#: includes/class.clef-login.php:329
 msgid ""
 "There's <b>no WordPress user</b> connected to your Clef account. <br></br> "
 "Log in with your standard username and password to <b>automatically connect "
