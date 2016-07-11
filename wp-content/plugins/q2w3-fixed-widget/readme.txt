@@ -2,9 +2,9 @@
 Contributors: Max Bond
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=Q36H2MHNVVP7U
 Tags: sidebar, widget, scroll, scrolling, fixed, floating, sticky, russian, q2w3
-Requires at least: 3.3
-Tested up to: 3.9.1
-Stable tag: 4.0.6
+Requires at least: 4.0
+Tested up to: 4.5.3
+Stable tag: 4.1
 
 Fixes positioning of the selected widgets, when the page is scrolled down. 
 
@@ -14,9 +14,6 @@ Enable "Fixed widget" option in the widget settings (see [screenshot](http://wor
 and it will be always in sight when page is scrolled down or up. There is no problem to "Fix" or "Stick" more than one widget even located in different sidebars!
 
 [youtube http://www.youtube.com/watch?v=sHXmeH5TfnA]
-
-[Watch the live demo](http://store.places-finder.com/cp-ajax-post-load).
-Right sidebar, last three widgets. Scroll down to the bottom.
 
 Compatibility note. The plugin is not working with all themes. Theme requirements:
 
@@ -32,6 +29,7 @@ Supported languages:
 * Russian
 * Spanish - [Ramón](http://apasionados.es) 
 * French - [Murat](http://wptheme.fr)
+* German - Stefan Meier
 
 == Installation ==
 
@@ -90,6 +88,13 @@ Send me email from this page: [http://www.q2w3.ru/contacts/](http://www.q2w3.ru/
 * [Q2W3 Post Order](http://wordpress.org/extend/plugins/q2w3-post-order/)
 
 == Changelog ==
+
+= 4.1 =
+* Added `Stop ID` option. Use it when you cannot specify `Margin Bottom` value. Solution provided by [Julian_Kingman](https://wordpress.org/support/profile/julian_kingman)!
+* Now the plugin is aware of the Wordpress admin bar presence!
+* Fixed destruction of `jQuery(window).load` hook. There should be no problems with other jQuery plugins now!
+* Added German translation
+* Updated internationalization support
 
 = 4.0.6 =
 * A small [bug fix](http://wordpress.org/support/topic/widget-gets-wider-when-it-reaches-the-top)

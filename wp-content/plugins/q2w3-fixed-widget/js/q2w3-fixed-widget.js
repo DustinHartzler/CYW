@@ -12,7 +12,11 @@ function q2w3_sidebar(options) {
 	
 	var window_height = jQuery(window).height();
 	var document_height = jQuery(document).height();
-	var fixed_margin_top = options.margin_top;
+	var fixed_margin_top = options.margin_top ;
+    
+	if (jQuery('#wpadminbar').is(":visible"))  { // WordPress admin bar 
+		fixed_margin_top = options.margin_top + jQuery('#wpadminbar').height();
+    }
 	
 	jQuery('.q2w3-widget-clone-' + options.sidebar).remove(); // clear fixed mode p1
 	
@@ -56,7 +60,7 @@ function q2w3_sidebar(options) {
 		}
 	}
 	
-	jQuery(window).off('load scroll.' + options.sidebar);
+	jQuery(window).off('load.' + options.sidebar + ' scroll.' + options.sidebar); 
 	
 	for ( var i = 0; i < widgets.length; i++ ) {
 		if (widgets[i]) fixed_widget(widgets[i]);
@@ -67,6 +71,10 @@ function q2w3_sidebar(options) {
 		var trigger_top = widget.offset_top - widget.fixed_margin_top;
 		var trigger_bottom = document_height - options.margin_bottom;
 	
+		if ( options.stop_id ) {
+            trigger_bottom = jQuery('#' + options.stop_id).offset().top - options.margin_bottom;
+        }
+		
 		var widget_width; if ( options.width_inherit ) widget_width = 'inherit'; else widget_width = widget.obj.css('width');
 		
 		var style_applied_top = false;
@@ -111,8 +119,8 @@ function q2w3_sidebar(options) {
 		}).trigger('scroll.' + options.sidebar);
 		
 		jQuery(window).on('resize', function() {
-			if ( jQuery(window).width() <= options.screen_max_width ) {
-				jQuery(window).off('load scroll.' + options.sidebar);
+			if ( jQuery(window).width() <= options.screen_max_width ) { // jQuery(window).width() - 17px - browser scroll width ???
+				jQuery(window).off('load.' + options.sidebar + ' scroll.' + options.sidebar); 
 				widget.obj.css('position', '');
 				widget.obj.css('top', '');
 				widget.obj.css('width', '');
