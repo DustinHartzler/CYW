@@ -12,9 +12,6 @@
  * Additional Search Queries: monitor, uptime, downtime, monitoring
  */
 
-add_action( 'jetpack_activate_module_monitor', array( Jetpack::init(), 'toggle_module_on_wpcom' ) );
-add_action( 'jetpack_deactivate_module_monitor', array( Jetpack::init(), 'toggle_module_on_wpcom' )  );
-
 class Jetpack_Monitor {
 
 	public $module = 'monitor';
@@ -154,7 +151,7 @@ class Jetpack_Monitor {
 	/*
 	 * Returns date of the last downtime.
 	 *
-	 * @since 4.0
+	 * @since 4.0.0
 	 * @return date in YYYY-MM-DD HH:mm:ss format
 	 */
 	public function monitor_get_last_downtime() {
