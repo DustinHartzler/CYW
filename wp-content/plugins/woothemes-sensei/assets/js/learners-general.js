@@ -56,17 +56,6 @@ jQuery(document).ready( function($) {
             case 'course': confirm_message = woo_learners_general_data.remove_from_course_confirm; break;
         }
 
-        //this will only be set for users who have purchased a course
-        var orderId = jQuery( this ).attr( 'data-order_id' );
-
-        if( orderId ){
-
-            confirm_message = woo_learners_general_data.remove_from_purchased_course_confirm;
-
-        }
-
-
-
         var confirm_remove = confirm( confirm_message );
 
         if( ! confirm_remove ) return;
@@ -80,7 +69,6 @@ jQuery(document).ready( function($) {
             dataToPost += 'user_id=' + user_id;
             dataToPost += '&post_id=' + post_id;
             dataToPost += '&post_type=' + post_type;
-            dataToPost += '&order_id=' + orderId;
 
             jQuery.post(
                 ajaxurl,

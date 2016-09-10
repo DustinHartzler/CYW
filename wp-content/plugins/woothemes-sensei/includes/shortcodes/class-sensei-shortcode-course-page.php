@@ -7,10 +7,11 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  * This class is loaded int WP by the shortcode loader class.
  *
  * @class Sensei_Shortcode_Course_Page
+ * @package Content
+ * @subpackage Shortcode
+ * @author Automattic
+ *
  * @since 1.9.0
- * @package Sensei
- * @category Shortcodes
- * @author 	WooThemes
  */
 class Sensei_Shortcode_Course_Page implements Sensei_Shortcode_Interface {
 
@@ -68,34 +69,55 @@ class Sensei_Shortcode_Course_Page implements Sensei_Shortcode_Interface {
 
         if( empty(  $this->id  ) ){
 
-            return __( 'Please supply a course ID for this shortcode.', 'woothemes-sensei' );
+            return sprintf( __( 'Please supply a course ID for the shortcode: %s', 'woothemes-sensei' ),'[sensei_course_page id=""]') ;
 
         }
 
-        //set the wp_query to the current courses query
-        global $wp_query;
-        $wp_query = $this->course_page_query;
+        // Set the wp_query to the current courses query.
+        global $wp_query, $post, $pages;
 
-        if( have_posts() ){
+        // backups
+        $global_post_ref     = clone $post;
+        $global_wp_query_ref = clone $wp_query;
+	    $global_pages_ref    = $pages;
 
-            the_post();
+	    $this->set_global_vars();
 
-        }else{
-
-            return __('No posts found.', 'woothemes-sensei');
-
-        }
-
+	    // Capture output.
         ob_start();
-        Sensei()->frontend->sensei_get_template('content-single-course.php');
+	    add_filter( 'sensei_show_main_footer', '__return_false' );
+	    add_filter( 'sensei_show_main_header', '__return_false' );
+	    add_action( 'sensei_single_course_lessons_before', array( $this, 'set_global_vars' ), 1, 0 );
+        Sensei_Templates::get_template( 'single-course.php' );
         $shortcode_output = ob_get_clean();
 
-        // set back the global query
-        wp_reset_query();
+        // set back the global query and post
+        // restore global backups
+        $wp_query       = $global_wp_query_ref;
+        $post           = $global_post_ref;
+        $wp_query->post = $global_post_ref;
+	    $pages          = $global_pages_ref;
 
         return $shortcode_output;
 
     }// end render
 
-}// end class
+	/**
+	 * Set global variables to the currently requested course.
+	 *
+	 * @since 1.9.5 introduced
+	 */
+	public function set_global_vars() {
 
+		global $wp_query, $post, $pages;
+
+		// Alter global var states.
+		$post                                = get_post( $this->id );
+		$pages                               = array( $post->post_content );
+		$wp_query                            = $this->course_page_query;
+		$wp_query->post                      = get_post( $this->id ); //  set this in case some the course hooks resets the query
+	}
+
+
+
+}// end class
