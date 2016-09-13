@@ -1,25 +1,32 @@
-=== Q2W3 Fixed Widget (Sticky Widget) ===
+=== Q2W3 Fixed Widget ===
 Contributors: Max Bond
-Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=Q36H2MHNVVP7U
-Tags: sidebar, widget, scroll, scrolling, fixed, floating, sticky, russian, q2w3
+Tags: sidebar, widget, scroll, scrolling, fixed, fixed widget, floating, floating widget, sticky, sticky widget, russian, q2w3
 Requires at least: 4.0
-Tested up to: 4.5.3
-Stable tag: 4.1
+Tested up to: 4.6
+Stable tag: 5.0.3
 
 Fixes positioning of the selected widgets, when the page is scrolled down. 
 
 == Description ==
 
-Enable "Fixed widget" option in the widget settings (see [screenshot](http://wordpress.org/extend/plugins/q2w3-fixed-widget/screenshots/)) 
-and it will be always in sight when page is scrolled down or up. There is no problem to "Fix" or "Stick" more than one widget even located in different sidebars!
+Enable "Fixed widget" option in the widget settings and it will be always in sight when page is scrolled down or up. There is no problem to "fix" or "stick" more than one widget even located in different sidebars!
 
-[youtube http://www.youtube.com/watch?v=sHXmeH5TfnA]
+[Live demo!](http://q2w3.ru/fixed-widget-demo/)
 
-Compatibility note. The plugin is not working with all themes. Theme requirements:
+New in version 5.0:
+1. Optimized client side performance. Detection of page changes is now based on MutationObserver API. Widget parameters recount is fired only when needed! Refresh interval option used only for campatibility with old browsers (no MutationObserver API support).
+2. Improved compatibility with caching plugins (W3TC, Autoptimize and etc.). No need to exclude jQuery and plugin files from cache!
+3. Async/Defer script load method support
+4. Added `Disable Width` and `Disable Height` options
+
+Note for cache plugins users. Don't forget to clear the cache after upgrading to version 5! Options format has been changed!
+
+Compatibility note. The plugin is not working with all themes! Theme requirements:
 
 * jQuery 1.7 required. jQuery 1.8.3 (or later) is recommended.
 * No JavaScript errors, coused by other plugins and scripts.
 * `wp_head()` and `wp_footer()` functions in header.php and footer.php files.
+* Widgets must have an id attribute.
 
 In some cases (widget "jumping" during scroll and etc.) theme CSS changes may be required.
 
@@ -35,8 +42,9 @@ Supported languages:
 
 1. Follow standard WordPress plugin installation procedure
 2. Activate the plugin through the Plugins menu in WordPress
-3. Go to Appearance -> Widgets, enable "Fixed Widget" option on any active widget ([screenshot](http://wordpress.org/extend/plugins/q2w3-fixed-widget/screenshots/)) 
-4. Fine tune fixed widget margins on Appearance -> Fixed Widget Options page
+3. Go to Appearance -> Widgets, enable "Fixed Widget" option on any active widget
+4. Fine tune plugin parameters on Appearance -> Fixed Widget Options page
+
 
 == Frequently Asked Questions ==
 
@@ -56,38 +64,41 @@ Check your CSS files for these two instructions:
 -webkit-transform: translate3d(0,0,0);`
 If found, disable them and see the result.
 
-= I have a responsive theme. How can I make the plugin compatible with it? =
-
-There are several options to accomplish this task. 
-First, is to enable "Screen Max Width" option. 
-For example you have a responsive styles: `@media screen and (max-width: 940px) {...}`. Set "Screen Max Width" = 940 - to disable plugin in responsive mode. 
-Second, use "Inherit widget width from the parent container" option.  
-
 = How to prevent overlapping with the footer? =
 
-Make sure you have updated plugin to version 2.x. Go to WP admin area, Appearance -> Fixed Widget Options. Here you can define top and bottom margins. Set bottom margin value >= footer height. Check the result.
+Go to WP admin area, Appearance -> Fixed Widget Options. Here you can define top and bottom margins. Set bottom margin value >= footer height. Check the result.
+If your footer height is changing from page to page it is better to use `Stop ID` option. Here you need to provide html tag id. The position of that html element will determine margin bottom value. For example let's take Twenty Sixteen default theme. Theme's footer container has an id="colophon". In the `Stop ID` option I need to enter just colophon, without any other symbols!
 
-= Refresh Interval option =
+= How to disable the plugin on mobile devices? = 
+There are two options: `Disable Width` and `Disable Height`. They works the same way. If browser window width/height is less then or equals specified value - the plugin is disabled.
 
-This option defines (in milliseconds, 1 sec = 1000 ms) how often plugin recalculates sticky widgets parameters. Required by sites with dynamic content (infinite scroll, image lazy load and other javascript stuff). The option have impact on the site performance (client side). Recommended values: 250 - 1500 milliseconds. If you don't have dynamic content, set Refresh interval = 0. 
-
-= I am ready to pay for advanced help. How to contact you? =
-
-Send me email from this page: [http://www.q2w3.ru/contacts/](http://www.q2w3.ru/contacts/)
-
-== Screenshots ==
-
-1. Widget with enabled "Fixed widget" option
-2. Fixed Widget Options
-3. Margin top
-4. Margin bottom
 
 == Other Notes ==
 
+Other Q2W3 plugins:
+
 * [Code Insert Manager](http://wordpress.org/extend/plugins/q2w3-inc-manager/)
-* [Q2W3 Post Order](http://wordpress.org/extend/plugins/q2w3-post-order/)
+
 
 == Changelog ==
+
+= 5.0.3 =
+* Improved solution for "q2w3_sidebar_options is not defined" error.
+
+= 5.0.2 =
+* Plugin javascript optimization
+* To resolve "q2w3_sidebar_options is not defined" error `wp_add_inline_script` function is used. WordPress 4.5 required for this fix!
+* Added option `Disable MutationObserver`. Use this option only as a backup to restore version 4 behavior!
+
+= 5.0.1 =
+* Fixed problem in multiple sidebars layout
+
+= 5.0 =
+* Optimized client side performance. Detection of page changes is now based on MutationObserver API. Widget parameters recount is fired only when needed! Refresh interval option used only for campatibility with old browsers (no MutationObserver API support).
+* Improved compatibility with caching plugins (W3TC, Autoptimize and etc.). No need to exclude jQuery and plugin files from cache!
+* Async/Defer script load method support
+* Added `Disable Width` and `Disable Height` options
+* Note for cache plugins users: don't forget to clear cache after upgrading to version 5! Options format has been changed!
 
 = 4.1 =
 * Added `Stop ID` option. Use it when you cannot specify `Margin Bottom` value. Solution provided by [Julian_Kingman](https://wordpress.org/support/profile/julian_kingman)!
