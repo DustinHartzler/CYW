@@ -3,7 +3,7 @@ Contributors: Max Bond
 Tags: sidebar, widget, scroll, scrolling, fixed, fixed widget, floating, floating widget, sticky, sticky widget, russian, q2w3
 Requires at least: 4.0
 Tested up to: 4.6
-Stable tag: 5.0.3
+Stable tag: 5.0.4
 
 Fixes positioning of the selected widgets, when the page is scrolled down. 
 
@@ -81,6 +81,9 @@ Other Q2W3 plugins:
 
 
 == Changelog ==
+
+= 5.0.4 =
+* Compatibility patch for Better Wordpress Minify plugin.
 
 = 5.0.3 =
 * Improved solution for "q2w3_sidebar_options is not defined" error.
