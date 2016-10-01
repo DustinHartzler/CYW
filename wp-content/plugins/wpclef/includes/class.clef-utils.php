@@ -132,7 +132,12 @@ class ClefUtils {
     public static function user_has_clef($user=false) {
         # if no user is provided, defaults to current user
         if (!$user) $user = wp_get_current_user();
-        return !!get_user_meta($user->ID, "clef_id", true);
+        if (is_int($user)) {
+            $user_id = $user;
+        } else {
+            $user_id = $user->ID;
+        }
+        return !!get_user_meta($user_id, "clef_id", true);
     }
 
     public static function associate_clef_id($clef_id, $user_id=false) {
@@ -250,7 +255,7 @@ class ClefUtils {
         if (!$override && isset($_COOKIE[self::$cookie_name]) && $_COOKIE[self::$cookie_name]) return;
 
         $state = wp_generate_password(24, false);
-        @setcookie(self::$cookie_name, $state, (time() + 60 * 60 * 24), '/', '', is_ssl(), true);
+        @setcookie(self::$cookie_name, $state, (time() + 60 * 60 * 24), '/', '', ClefUtils::is_tls(), true);
         $_COOKIE[self::$cookie_name] = $state;
 
         return $state;
@@ -295,16 +300,20 @@ class ClefUtils {
 
         return $sent;
     }
-    
+
     public static function get_logout_hook_url() {
         $logout_hook_url = wp_login_url();
-        
+
         // Accommodate WP Engine's firewall rules, which require a wpe-login param on POST requests to the login script URL
         if ( function_exists( 'wpe_site' ) ) {
             $logout_hook_url = add_query_arg('wpe-login', 'clef', $logout_hook_url);
         }
 
         return $logout_hook_url;
+    }
+
+    public static function is_tls() {
+        return is_ssl() || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https');
     }
 }
 ?>
