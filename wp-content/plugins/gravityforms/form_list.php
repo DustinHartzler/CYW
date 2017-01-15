@@ -272,7 +272,7 @@ class GFFormList {
 			jQuery( document ).ready( function( $ ) {
 
 				// load new form modal on New Form page
-				<?php if ( rgget( 'page' ) == 'gf_new_form' ) :	?>
+				<?php if ( rgget( 'page' ) == 'gf_new_form' && ! rgget( 'paged' ) ) :	?>
 				loadNewFormModal();
 				<?php endif; ?>
 
@@ -305,6 +305,13 @@ class GFFormList {
 				resetNewFormModal();
 				tb_show(<?php echo json_encode( esc_html__( 'Create a New Form', 'gravityforms' ) ); ?>, '#TB_inline?width=375&amp;inlineId=gf_new_form_modal');
 				jQuery('#new_form_title').focus();
+
+				jQuery( '#new_form_title').keyup( function( event ) {
+					if (event.keyCode == 13) {
+						saveNewForm();
+					}
+				});
+
 				return false;
 			}
 

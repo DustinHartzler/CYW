@@ -61,13 +61,14 @@ if ( class_exists( 'GFForms' ) ) {
 
 		public function init_admin() {
 			parent::init_admin();
-			// update the cache meta
+			// update the results cache meta
 			add_action( 'gform_after_update_entry', array( $this, 'entry_updated' ), 10, 2 );
 			add_action( 'gform_update_status', array( $this, 'update_entry_status' ), 10, 2 );
 			add_action( 'gform_after_save_form', array( $this, 'after_save_form' ), 10, 2 );
 		}
 
 		public function init_frontend() {
+			parent::init_frontend();
 			$settings           = $this->get_plugin_settings();
 			$this->_enabled     = rgar( $settings, 'enabled' );
 			$this->_public_key  = rgar( $settings, 'public_key' );
@@ -77,7 +78,12 @@ if ( class_exists( 'GFForms' ) ) {
 				return;
 			}
 
-			add_filter( 'option_rewrite_rules', array( $this, 'rewrite_rules' ) );
+			add_rewrite_rule( GFWEBAPI_SLUG . '/(.*)', 'index.php?' . GFWEBAPI_ROUTE_VAR . '=$matches[1]', $after = 'top' );
+
+			$rules = get_option( 'rewrite_rules' );
+			if ( ! isset( $rules[ GFWEBAPI_SLUG . '/(.*)' ] ) ) {
+				flush_rewrite_rules();
+			}
 
 			add_filter( 'query_vars', array( $this, 'query_vars' ) );
 
@@ -85,6 +91,10 @@ if ( class_exists( 'GFForms' ) ) {
 
 			// update the cache
 			add_action( 'gform_entry_created', array( $this, 'entry_created' ), 10, 2 );
+		}
+
+		public function load_text_domain() {
+			GFCommon::load_gf_text_domain();
 		}
 
 		// Scripts
@@ -352,20 +362,6 @@ if ( class_exists( 'GFForms' ) ) {
 
 		public function set_logging_supported( $plugins ) {
 			return parent::set_logging_supported( $plugins );
-		}
-
-		public function rewrite_rules( $rules ) {
-
-			$gfapi_rules[ GFWEBAPI_SLUG . '/(.*)' ] = 'index.php?' . GFWEBAPI_ROUTE_VAR . '=$matches[1]';
-
-			if ( is_array( $rules ) ) {
-				// the array operator instead of array_merge avoids tampering with the keys in the original array
-				$rules = $gfapi_rules + $rules;
-			} else {
-				$rules = $gfapi_rules;
-			}
-
-			return $rules;
 		}
 
 		public function query_vars( $query_vars ) {
@@ -665,6 +661,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function get_feeds( $feed_ids, $form_id = null ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to get feeds via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_get_feeds', 'gravityforms_edit_forms' );
 			$this->authorize( $capability );
 
@@ -684,6 +685,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function delete_feeds( $feed_ids, $form_id = null ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to delete feeds via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_delete_feeds', 'gravityforms_edit_forms' );
 			$this->authorize( $capability );
 
@@ -726,6 +732,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function put_feeds( $feed_data, $feed_id = null ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to update feeds via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_put_feeds', 'gravityforms_edit_forms' );
 			$this->authorize( $capability );
 
@@ -760,6 +771,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function post_feeds( $feeds, $form_id = null ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to create feeds via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_post_feeds', 'gravityforms_edit_forms' );
 			$this->authorize( $capability );
 
@@ -827,6 +843,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function delete_forms( $form_ids ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to delete forms via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_delete_forms', 'gravityforms_delete_forms' );
 			$this->authorize( $capability );
 
@@ -859,6 +880,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function post_entries( $data, $form_id = null ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to create entries via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_post_entries', 'gravityforms_edit_entries' );
 			$this->authorize( $capability );
 
@@ -883,6 +909,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function put_entries( $data, $entry_id = null ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to update entries via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_put_entries', 'gravityforms_edit_entries' );
 			$this->authorize( $capability );
 			$entries = array();
@@ -910,6 +941,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function put_forms_properties( $property_values, $form_id ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to update form properties via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_put_forms_properties', 'gravityforms_edit_forms' );
 			$this->authorize( $capability );
 
@@ -935,6 +971,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function put_entry_properties( $property_values, $entry_id ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to update entry properties via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_put_entries_properties', 'gravityforms_edit_entries' );
 			$this->authorize( $capability );
 
@@ -969,6 +1010,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function post_forms( $data ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to create forms via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_post_forms', 'gravityforms_create_form' );
 			$this->authorize( $capability );
 
@@ -988,6 +1034,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function put_forms( $data, $form_id = null ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to update forms via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_put_forms', 'gravityforms_create_form' );
 			$this->authorize( $capability );
 
@@ -1011,6 +1062,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function delete_entries( $entry_ids ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to delete entries via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_delete_entries', 'gravityforms_delete_entries' );
 			$this->authorize( $capability );
 
@@ -1043,6 +1099,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function get_entries( $entry_ids, $form_ids = null, $schema = '', $field_ids = array() ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to get entries via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_get_entries', 'gravityforms_view_entries' );
 			$this->authorize( $capability );
 
@@ -1078,7 +1139,7 @@ if ( class_exists( 'GFForms' ) ) {
 				}
 			} else {
 
-				//sorting parameters
+				// Sorting parameters
 				$sort_key = isset( $_GET['sorting']['key'] ) && ! empty( $_GET['sorting']['key'] ) ? $_GET['sorting']['key'] : 'id';
 				$sort_dir = isset( $_GET['sorting']['direction'] ) && ! empty( $_GET['sorting']['direction'] ) ? $_GET['sorting']['direction'] : 'DESC';
 				$sorting  = array( 'key' => $sort_key, 'direction' => $sort_dir );
@@ -1086,7 +1147,7 @@ if ( class_exists( 'GFForms' ) ) {
 					$sorting['is_numeric'] = $_GET['sorting']['is_numeric'];
 				}
 
-				//paging parameters
+				// Paging parameters
 				$page_size = isset( $_GET['paging']['page_size'] ) ? intval( $_GET['paging']['page_size'] ) : 10;
 				if ( isset( $_GET['paging']['current_page'] ) ) {
 					$current_page = intval( $_GET['paging']['current_page'] );
@@ -1153,6 +1214,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function get_forms( $form_ids = null, $schema = '' ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to get form details via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_get_forms', 'gravityforms_edit_forms' );
 			$this->authorize( $capability );
 
@@ -1444,6 +1510,11 @@ if ( class_exists( 'GFForms' ) ) {
 		public function get_results( $form_id ) {
 			$this->log_debug( __METHOD__ . '(): Running.' );
 
+			/**
+			 * Filters the capability required to get form results via the web API.
+			 *
+			 * @since 1.9.2
+			 */
 			$capability = apply_filters( 'gform_web_api_capability_get_results', 'gravityforms_view_entries' );
 			$this->authorize( $capability );
 
