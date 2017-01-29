@@ -31,8 +31,7 @@ if ( ! defined('WPINC')) {
             </th>
             <td>
                 <input name="gl_private_token" type="text" id="gl_private_token" class="regular-text" placeholder="<?php echo (get_option('gl_private_token')) ? '********' : null; ?>">
-                <p class="description">Only neccessary if you have private repositories.</p>
-                <p class="description">Find private token in <strong>Settings > Account</strong>.</p>
+                <p class="description">Find private token in <strong>Settings > Access Tokens</strong>.</p>
             </td>
         </tr>
         </tbody>

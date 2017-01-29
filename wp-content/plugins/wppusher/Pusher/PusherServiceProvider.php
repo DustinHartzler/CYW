@@ -18,7 +18,7 @@ class PusherServiceProvider implements ProviderInterface
         });
 
         // Use EDD for licensing
-        $pusher->bind('Pusher\License\LicenseApi', 'Pusher\License\EddLicenseApi');
+        $pusher->bind('Pusher\License\LicenseApi', 'Pusher\License\DashboardLicenseApi');
 
         // Singletons must be last for now, since they call "make()"
         $pusher->singleton('Pusher\Dashboard', 'Pusher\Dashboard');

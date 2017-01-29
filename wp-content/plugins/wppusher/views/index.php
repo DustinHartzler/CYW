@@ -18,7 +18,7 @@ if ( ! defined('WPINC')) {
         <div class="welcome-panel-column-container">
             <div class="welcome-panel-column">
                 <h4>Using Private Repositories</h4>
-                <a class="button button-primary button-hero" href="https://wppusher.com/#pricing">Buy a license</a>
+                <a class="button button-primary button-hero" href="https://wppusher.com/pricing?utm_source=plugin&utm_medium=hero">Buy a license</a>
                 <p>or, type in your license key in the form below</p>
             </div>
             <div class="welcome-panel-column">
@@ -32,6 +32,7 @@ if ( ! defined('WPINC')) {
             <div class="welcome-panel-column welcome-panel-last">
                 <h4>More Actions</h4>
                 <ul>
+                    <li><a href="https://git4wp.com/" target="_blank" class="welcome-icon welcome-learn-more">[Video] Git for WordPress developers</a></li>
                     <li><a href="https://github.com/wppusher/wppusher-documentation/blob/master/push-to-deploy.md" target="_blank" class="welcome-icon welcome-learn-more">Learn about Push-to-Deploy</a></li>
                     <li><a href="https://github.com/wppusher/wppusher-documentation" target="_blank" class="welcome-icon welcome-learn-more">Take a look at the docs</a></li>
                 </ul>

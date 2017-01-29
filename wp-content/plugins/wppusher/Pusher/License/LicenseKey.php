@@ -42,6 +42,21 @@ class LicenseKey
         return $key;
     }
 
+    public static function fromDashboardResponseArray(array $array)
+    {
+        $key = new LicenseKey;
+
+        $key->id = null;
+        $key->email = $array['email'];
+        $key->licenses = $array['site_installs'];
+        $key->token = $array['token'];
+        $key->usedLicenses = $array['used_installs'];
+        $key->validUntil = $array['expires'];
+        $key->autoRenew = null;
+
+        return $key;
+    }
+
     public function id($id = null)
     {
         if ( ! is_null($id)) {
@@ -98,6 +113,10 @@ class LicenseKey
 
     public function hasExpired()
     {
+        if (! $this->validUntil) {
+            return false;
+        }
+
         $now = time();
         $validUntil = strtotime($this->validUntil);
 

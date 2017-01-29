@@ -23,12 +23,10 @@ if ( ! defined('WPINC')) {
             <td>
             <?php if ($license_key) { ?>
                 <?php if ($license_key->hasExpired()) { echo "<p style=\"color: #a00;\">Your license key has expired.</p>"; } ?>
-                <p>Your license key has <strong><?php echo ($license_key->licenses() > 0) ? $license_key->licenses() : 'unlimited'; ?></strong> site licenses. <strong><?php echo $license_key->usedLicenses(); ?></strong> of them are in use.</p>
-                <p>License key is valid until <strong><?php echo date('jS \of F Y', strtotime($license_key->validUntil())); ?></strong> and will <i><a href="https://wppusher.com/faq#renewals">automatically be renewed</a></i>.</p>
-                <br>
-                <p>You can manage your license key from <a href="https://license.wppusher.com" target="_blank">license.wppusher.com</a>.</p>
+                <p>Your license has <strong><?php echo ($license_key->licenses() > 0) ? $license_key->licenses() : 'unlimited'; ?></strong> site installs. <strong><?php echo $license_key->usedLicenses(); ?></strong> of them are in use.</p>
+                <p>Licenses are <i><a href="https://wppusher.com/faq#renewals">automatically being renewed</a></i>.</p>
             <?php } else { ?>
-                <p><i>You haven't registered any license key for this installation. <strong><a href="https://wppusher.com#licenses">Buy one here</a>.</i></strong></p>
+                <p><i>You haven't registered any license key for this installation. <strong><a href="https://wppusher.com/pricing?utm_source=plugin&utm_medium=license_tab">Buy one here</a>.</i></strong></p>
             <?php } ?>
             </td>
         </tr>

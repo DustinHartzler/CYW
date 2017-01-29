@@ -20,7 +20,7 @@ if ( ! defined('WPINC')) {
                         <h3><?php echo $theme->name; ?></h3>
                         <p><i class="fa fa-code-fork"></i> Branch: <code><?php echo $theme->repository->getBranch(); ?></code></p>
                         <p>Push-to-Deploy: <code><?php echo ($theme->pushToDeploy) ? 'enabled' : 'disabled'; ?></code></p>
-                        <p>Push-to-Deploy URL:<br><input style="width: 80%;" type="text" value="<?php echo $theme->getPushToDeployUrl(); ?>" disabled></p>
+                        <p>Push-to-Deploy URL:<br><input style="width: 80%;" type="text" value="<?php echo $theme->getPushToDeployUrl(); ?>"></p>
                         <?php if ($theme->hasSubdirectory()) { ?>
                             <p>Subdirectory: <code><?php echo $theme->getSubdirectory(); ?></code></p>
                         <?php } ?>

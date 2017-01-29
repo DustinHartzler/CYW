@@ -56,7 +56,7 @@ if ( ! defined('WPINC')) {
                 <td>
                     <label><input type="checkbox" name="wppusher[private]" <?php if (isset($_POST['wppusher']['private'])) echo 'checked'; ?> <?php echo ($hasValidLicense) ? null : 'disabled'; ?>> <i class="fa fa-lock" aria-hidden="true"></i> Repository is private</label>
                     <?php if ( ! $hasValidLicense) { ?>
-                        <p class="description">You need a license to use private repositories. <a href="http://wppusher.com#pricing">Get one here.</a></p>
+                        <p class="description">You need a license to use private repositories. <a href="https://wppusher.com/pricing?utm_source=plugin&utm_medium=install_package">Get one here.</a></p>
                     <?php } ?>
                 </td>
             </tr>

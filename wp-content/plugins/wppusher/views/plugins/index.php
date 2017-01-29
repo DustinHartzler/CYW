@@ -20,7 +20,7 @@ if ( ! defined('WPINC')) {
                     <h3><?php echo $plugin->name; ?></h3>
                     <p><i class="fa fa-code-fork"></i> Branch: <code><?php echo $plugin->repository->getBranch(); ?></code></p>
                     <p>Push-to-Deploy: <code><?php echo ($plugin->pushToDeploy) ? 'enabled' : 'disabled'; ?></code></p>
-                    <p>Push-to-Deploy URL:<br><input style="width: 80%;" type="text" value="<?php echo $plugin->getPushToDeployUrl(); ?>" disabled></p>
+                    <p>Push-to-Deploy URL:<br><input style="width: 80%;" type="text" value="<?php echo $plugin->getPushToDeployUrl(); ?>"></p>
                     <?php if ($plugin->hasSubdirectory()) { ?>
                         <p>Subdirectory: <code><?php echo $plugin->getSubdirectory(); ?></code></p>
                     <?php } ?>

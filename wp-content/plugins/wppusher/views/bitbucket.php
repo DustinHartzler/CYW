@@ -26,7 +26,6 @@ if ( ! defined('WPINC')) {
                 <a href="#" onclick="window.open('https://cloud.wppusher.com/auth/bitbucket', 'WP Pusher Authentication', 'height=800,width=1100'); return false;" class="button">
                     <i class="fa fa-bitbucket"></i>&nbsp; Obtain a Bitbucket token
                 </a>
-                <p class="description">You only need a token if your repositories are private.</p>
             </td>
         </tr>
         </tbody>
