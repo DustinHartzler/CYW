@@ -16,11 +16,10 @@ class GitLabRepository extends Repository
             throw new Exception('No GitLab base url stored.');
 
         if ($this->isPrivate()) {
-            $url = trailingslashit($baseUrl) . 'api/v3/projects/' . urlencode($this->handle) . '/repository/archive.zip?ref=' . $this->getBranch() . '&dir=/wppusher';
             add_filter( 'http_request_args', array($this, 'gitLabBasicAuth'), 10, 2 );
-        } else {
-            $url = trailingslashit($baseUrl) . $this->handle . '/repository/archive.zip?ref=' . $this->getBranch();
         }
+
+        $url = trailingslashit($baseUrl) . $this->handle . '/repository/archive.zip?ref=' . $this->getBranch() . '&dir=/wppusher';
 
         return $url;
     }
