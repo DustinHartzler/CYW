@@ -19,7 +19,7 @@ if ( ! defined('WPINC')) {
                 <td>
                     <input id="radio-gh" name="wppusher[type]" type="radio" value="gh" checked> <label for="radio-gh"><i class="fa fa-github"></i> GitHub &nbsp;</label>
                     <input id="radio-bb" name="wppusher[type]" type="radio" value="bb" <?php if (isset($_POST['wppusher']['type']) && $_POST['wppusher']['type'] === 'bb') echo 'checked'; ?>> <label for="radio-bb"><i class="fa fa-bitbucket"></i> Bitbucket &nbsp;</label>
-                    <input id="radio-gl" name="wppusher[type]" type="radio" value="gl" <?php if (isset($_POST['wppusher']['type']) && $_POST['wppusher']['type'] === 'gl') echo 'checked'; ?>> <label for="radio-gl"><i class="fa fa-git-square"></i> GitLab &nbsp;</label>
+                    <input id="radio-gl" name="wppusher[type]" type="radio" value="gl" <?php if (isset($_POST['wppusher']['type']) && $_POST['wppusher']['type'] === 'gl') echo 'checked'; ?>> <label for="radio-gl"><i class="fa fa-gitlab"></i> GitLab &nbsp;</label>
                 </td>
             </tr>
             <tr>
@@ -27,7 +27,8 @@ if ( ! defined('WPINC')) {
                     <label>Theme repository</label>
                 </th>
                 <td>
-                    <input name="wppusher[repository]" type="text" class="regular-text" value="<?php echo (isset($_POST['wppusher']['repository'])) ? $_POST['wppusher']['repository'] : ''; ?>">
+                    <input id="wppusher-repository-name" name="wppusher[repository]" type="text" class="regular-text" value="<?php echo (isset($_POST['wppusher']['repository'])) ? $_POST['wppusher']['repository'] : ''; ?>">
+                    <button id="pick-from-gh-btn" class="button button-default" onclick="window.open('https://cloud.wppusher.com/repositories/github', 'WP Pusher Cloud', 'height=800,width=1100'); document.getElementById('wppusher-repository-name').focus(); document.getElementById('wppusher-repository-name').placeholder = 'Now, paste it here!'; return false;"><i class="fa fa-github"></i>&nbsp; Pick from GitHub</button>
                     <p class="description">Example: wppusher/awesome-wordpress-theme</p>
                 </td>
             </tr>
@@ -65,7 +66,7 @@ if ( ! defined('WPINC')) {
                 </th>
                 <td>
                     <label><input type="checkbox" name="wppusher[ptd]" <?php if (isset($_POST['wppusher']['ptd'])) echo 'checked'; ?>> <i class="fa fa-refresh" aria-hidden="true"></i> Push-to-Deploy</label>
-                    <p class="description">Automatically update on every push. Read about setup <a target="_blank" href="https://github.com/wppusher/wppusher-documentation/blob/master/push-to-deploy.md">here</a>.</p>
+                    <p class="description">Automatically update on every push. Read about setup <a target="_blank" href="http://docs.wppusher.com/article/24-automatic-updates-with-push-to-deploy">here</a>.</p>
                 </td>
             </tr>
             <tr>
@@ -80,3 +81,20 @@ if ( ! defined('WPINC')) {
     </table>
     <?php submit_button('Install theme'); ?>
 </form>
+
+<script>
+    var ghBtn = document.getElementById('pick-from-gh-btn');
+    var ghRadio = document.getElementById('radio-gh');
+    var bbRadio = document.getElementById('radio-bb');
+    var glRadio = document.getElementById('radio-gl');
+
+    ghRadio.addEventListener('click', function(e) {
+        ghBtn.style.display = 'inline-block';
+    });
+    bbRadio.addEventListener('click', function(e) {
+        ghBtn.style.display = 'none';
+    });
+    glRadio.addEventListener('click', function(e) {
+        ghBtn.style.display = 'none';
+    });
+</script>

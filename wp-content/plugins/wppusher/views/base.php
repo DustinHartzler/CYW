@@ -31,7 +31,7 @@ foreach ($messages as $message) {
             Copyright &copy; <?php echo date('Y'); ?>
             <a href="https://wppusher.com" target="_blank">WP Pusher</a>
             | <a href="https://wppusher.com/tos" target="_blank">Terms</a>
-            | <a href="https://github.com/wppusher/wppusher-documentation/blob/master/README.md" target="_blank">Documentation</a>
+            | <a href="http://docs.wppusher.com" target="_blank">Documentation</a>
         </p>
         <a href="https://wppusher.com" target="_blank">
             <img src="https://wppusher.com/png_400px.png" width="50">

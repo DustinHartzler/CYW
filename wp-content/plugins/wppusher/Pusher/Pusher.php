@@ -143,8 +143,8 @@ class Pusher implements Container
         wp_register_style('wppusher-styles', trailingslashit($this->pusherUrl) . 'assets/wppusher.css');
         wp_enqueue_style('wppusher-styles');
 
-        wp_register_style('font_awesome', '//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css');
-        wp_enqueue_style('font_awesome');
+        wp_register_script('font_awesome', 'https://use.fontawesome.com/ad1f5276bc.js');
+        wp_enqueue_script('font_awesome');
 
         wp_register_script('wppusher-js', trailingslashit($this->pusherUrl) . 'assets/wppusher.js');
         wp_enqueue_script('wppusher-js');
