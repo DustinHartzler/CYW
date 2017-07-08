@@ -83,7 +83,7 @@ class Theme implements Package
         $package = base64_encode($this->stylesheet);
 
         $url = sprintf("%s?wppusher-hook&token=%s&package=%s",
-            get_site_url(),
+            trailingslashit(get_site_url()),
             get_option('wppusher_token'),
             $package
         );

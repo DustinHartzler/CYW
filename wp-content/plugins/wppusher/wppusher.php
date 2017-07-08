@@ -4,7 +4,7 @@
  * Plugin Name: WP Pusher
  * Plugin URI: http://wppusher.com
  * Description: Pain-free deployment of WordPress themes and plugins directly from GitHub.
- * Version: 2.4.2
+ * Version: 2.4.3
  * Author: WP Pusher
  * Author URI: http://wppusher.com
  * License: GNU GENERAL PUBLIC LICENSE

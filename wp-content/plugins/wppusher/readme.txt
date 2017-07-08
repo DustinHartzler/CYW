@@ -1,8 +1,8 @@
 === WP Pusher ===
 Tags: git, deploy, deployment, github, workflow
 Requires at least: 3.9
-Tested up to: 4.7
-Stable tag: 2.4.2
+Tested up to: 4.8
+Stable tag: 2.4.3
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -63,6 +63,10 @@ The way WP Pusher works, packages (themes and plugins) need to be in their own r
 3. Manage themes and plugins from the dashboard
 
 == Changelog ==
+
+= 2.4.3 =
+
+* Always add trailing slashes to Push-to-Deploy URLs, to prevent redirects (that GitHub and Bitbucket won't follow). This should not be a breaking change, since 1. root level URLs (wppusher.com) are the same with or without trailing slashes (.com vs .com/) and 2. WordPress always add a trailing slash to a site in a subdirectory (wppusher.com/blog/).
 
 = 2.4.2 =
 
