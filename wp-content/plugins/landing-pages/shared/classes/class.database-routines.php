@@ -11,7 +11,7 @@ if ( !class_exists('Inbound_Upgrade_Routines') ) {
         static $current_version;
 
         /**
-         * Run Generic Upgrade Routines
+         * Run upgrade routines defined in this class
          */
         public static function load() {
             self::define_routines();
@@ -19,7 +19,19 @@ if ( !class_exists('Inbound_Upgrade_Routines') ) {
         }
 
         /**
+         * Add fallback listener to make sure database upgrade routines are ran even if the activation protocol does not fire.
+         * This function compares the shared files version in the database to the INBOUNDNOW_SHARED_DBRV constant. If they aren't the same then it runs the routines.
          *
+         */
+        public static function add_update_check() {
+            self::set_versions( array('scope'=>'shared') );
+            if ( self::$past_version != self::$current_version ) {
+                self::load();
+            }
+        }
+
+        /**
+         * Defines upgrade routines to run.
          */
         public static function define_routines() {
 
@@ -71,6 +83,14 @@ if ( !class_exists('Inbound_Upgrade_Routines') ) {
                 'introduced' => '1.0.7',
                 'callback' => array( __CLASS__ , 'alter_events_pageviews_107')
             );
+
+            /* alter events table */
+            self::$routines['inbound-settings-109'] = array(
+                'id' => 'inbound-settings-109',
+                'scope' => 'shared',
+                'introduced' => '1.0.9',
+                'callback' => array( __CLASS__ , 'alter_inbound_settings_109')
+            );
         }
 
         /**
@@ -100,7 +120,7 @@ if ( !class_exists('Inbound_Upgrade_Routines') ) {
             }
 
             /* set shared version transient */
-            set_transient('inbound_shared_version' , INBOUNDNOW_SHARED_DBRV);
+            update_option('inbound_shared_version' , INBOUNDNOW_SHARED_DBRV , false);
         }
 
 
@@ -110,7 +130,7 @@ if ( !class_exists('Inbound_Upgrade_Routines') ) {
         public static function set_versions( $routine ) {
             switch($routine['scope']) {
                 case 'shared':
-                    self::$past_version = get_transient('inbound_shared_version');
+                    self::$past_version = get_option('inbound_shared_version');
                     self::$current_version = INBOUNDNOW_SHARED_DBRV;
                     break;
                 case 'leads':
@@ -255,10 +275,24 @@ if ( !class_exists('Inbound_Upgrade_Routines') ) {
                 $wpdb->get_results("ALTER TABLE {$table_name} ADD `lead_id` mediumint(20)  NOT NULL");
             }
         }
+
+
+        /**
+         * @migration-type: inbound pro settings array
+         * @mirgration: change the 'mailer' key to 'mailer' key in $inbound_settings
+         */
+        public static function alter_inbound_settings_109() {
+            if (class_exists('Inbound_Options_API')) {
+                $inbound_settings = Inbound_Options_API::get_option('inbound-pro', 'settings', array());
+                $inbound_settings['mailer'] = (isset($inbound_settings['mailer'])) ? $inbound_settings['mailer'] : array();
+                unset($inbound_settings['inbound-mailer']);
+                Inbound_Options_API::update_option('inbound-pro', 'settings', $inbound_settings);
+            }
+        }
     }
 
-    /* hook upgrade routines into activation script */
-    add_action('inbound_shared_activate' , array( 'Inbound_Upgrade_Routines' , 'load') );
+    /* set fallback action in case routines do not run via activation */
+    add_action('admin_init' , array( 'Inbound_Upgrade_Routines' , 'add_update_check') );
 
 
     /**

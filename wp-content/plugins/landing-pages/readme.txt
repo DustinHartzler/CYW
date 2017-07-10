@@ -6,8 +6,8 @@ License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: landing pages, inbound marketing, conversion pages, split testing, a b test, a b testing, a/b test, a/b testing, coming soon page, email list, landing page, list building, maintenance page, squeeze page, inbound now, landing-pages, splash pages, cpa, click tracking, goal tracking, analytics, free landing page templates
 Requires at least: 3.8
-Tested up to: 4.7.4
-Stable Tag: 2.5.5
+Tested up to: 4.8
+Stable Tag: 2.5.7
 
 
 Create landing pages for your WordPress site. Monitor and improve conversion rates, run A/B split tests, customize your own templates and more.
@@ -50,9 +50,9 @@ You can quickly take your existing designs and implement them using our <a href=
 The plugin is also fully extendable and has a number of actions, filters, and hooks available for use. If a hook doesn't exist, simply ask and we can implement custom changes.
 
 
-[Follow Development on GitHub ](https://github.com/inboundnow/landing-pages "Follow & Contribute to core development on GitHub")
+[Contribute to Code](https://github.com/inboundnow/inbound-pro/core/landing-pages "Follow & Contribute to core development on GitHub")
  |
-[Follow Inbound Now on Twitter ](https://twitter.com/inboundnow "Stay notified with updates.")
+[Follow on Twitter ](https://twitter.com/inboundnow "Stay Notified")
 
 
 = Templates =
@@ -85,7 +85,12 @@ We also offer a guide for using <a href="https://github.com/inboundnow/landing-p
 
 == Changelog ==
 
-= 2.5.5 =
+= 2.5.7 =
+* Compatible with WordPress 4.8
+* Updating shared files
+
+= 2.5.6 =
+* Adding wpautop to default landing page
 * Updating shared files
 
 
